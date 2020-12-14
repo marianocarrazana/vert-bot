@@ -1,0 +1,3 @@
+# Vert Bot
+
+Trading bot
