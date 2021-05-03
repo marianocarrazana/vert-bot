@@ -65,7 +65,7 @@ def checkMarket(symbol):
 			candle[5],candle[6],candle[7],candle[8],candle[9],candle[10],candle[11]])
 	df = pd.DataFrame(df,columns=['opentime', 'open','high','low','close','volume','closetime','quoteasset','numbertrades','takerbaseasset','takerquoteasset','ignore']) 
 	df = ta.utils.dropna(df)
-	indicator_rsi = ta.momentum.RSIIndicator(close= df['close'], n = 14, fillna = True)
+	indicator_rsi = ta.momentum.RSIIndicator(close= df['close'], window = 14, fillna = True)
 	df['rsi'] = indicator_rsi.rsi()
 
 	logging.info(symbol,df["rsi"].iloc[-1],df["rsi"].iloc[0])
