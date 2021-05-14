@@ -1,22 +1,26 @@
-import random,requests,re,time
+import random
+import requests
+import re
+import time
 
-CRYPTO = {
-    'BNB':1036977,
-    'XRP':1075586,
-    'BTC':1035793,
-    'ADA':1073899,
-    'ETH':1035794,
-    'UNI':1167226,
-    'DOGE':1158819,
-    'CHZ':1152986,
-    'BTT':1122392,
-    'BCH':1099022,
-    'XLM':1122657,
-    'LINK':1137399,
-    'DOT':1169564,
-    'VET':1089757,
-    'ALGO':1142193
-    }
+CRYPTO = [
+    {'binance_id': 'BNBUSDT', 'investing_id': 1036977},
+    # {'binance_id': 'XRPUSDT', 'investing_id': 1075586},
+    # {'binance_id': 'BTCUSDT', 'investing_id': 1035793},
+    # {'binance_id': 'ADAUSDT', 'investing_id': 1073899},
+    # {'binance_id': 'ETHUSDT', 'investing_id': 1035794},
+    # {'binance_id': 'UNIUSDT', 'investing_id': 1167226},
+    # {'binance_id': 'DOGEUSDT', 'investing_id': 1158819},
+    # {'binance_id': 'CHZUSDT', 'investing_id': 1152986},
+    # {'binance_id': 'BTTUSDT', 'investing_id': 1122392},
+    # {'binance_id': 'BCHUSDT', 'investing_id': 1099022},
+    # {'binance_id': 'XLMUSDT', 'investing_id': 1122657},
+    # {'binance_id': 'LINKUSDT', 'investing_id': 1137399},
+    # {'binance_id': 'DOTUSDT', 'investing_id': 1169564},
+    # {'binance_id': 'VETUSDT', 'investing_id': 1089757},
+    # {'binance_id': 'ALGOUSDT', 'investing_id': 1142193},
+    # {'binance_id': 'MATICUSDT', 'investing_id': 1131278}
+]
 
 INTERVALS = {
     '1min': 60,
@@ -99,52 +103,56 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36"
 ]
 
+
 def random_user_agent():
     return random.choice(USER_AGENTS)
 
-def getTechnicalData(pair,interval):
+
+def getTechnicalData(investing_id, interval):
     data_values = {
-            'pairID': CRYPTO[pair],
-            'period': INTERVALS[interval],
-            'viewType': 'normal'
-        }
+        'pairID': investing_id,
+        'period': INTERVALS[interval],
+        'viewType': 'normal'
+    }
 
     headers = {
-            "User-Agent": random_user_agent(),
-            "X-Requested-With": "XMLHttpRequest",
-            "Accept": "text/html",
-            "Accept-Encoding": "gzip, deflate",
-            "Connection": "keep-alive",
-        }
+        "User-Agent": random_user_agent(),
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "text/html",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+    }
 
     url = "https://www.investing.com/instruments/Service/GetTechincalData"
 
     req = requests.post(url, headers=headers, data=data_values)
 
-    #print(req.text)
+    # print(req.text)
     regex = r"summary:<span.+>(.+)</span>"
 
     matches = re.search(regex, req.text, re.MULTILINE | re.IGNORECASE)
-    
+
     return matches[1]
 
+
 def getAllTechnicalData():
-    interval = [['5mins',1],['1hour',2],['5hours',3],['daily',5],['weekly',4]]
+    interval = [['5mins', 1], ['1hour', 2], [
+        '5hours', 3], ['daily', 5], ['weekly', 4]]
     for c in CRYPTO:
         points = 0
         for i in interval:
-            tech = getTechnicalData(c,i[0])
-            if tech=='Strong Sell':
-                p = i[1]*-2;
-            elif tech== 'Sell':
-                p = i[1]*-1;
-            elif tech== 'Buy':
-                p = i[1]*1;
-            elif tech== 'Strong Buy':
+            tech = getTechnicalData(c, i[0])
+            if tech == 'Strong Sell':
+                p = i[1]*-2
+            elif tech == 'Sell':
+                p = i[1]*-1
+            elif tech == 'Buy':
+                p = i[1]*1
+            elif tech == 'Strong Buy':
                 p = i[1]*2
             else:
                 p = 0
-            print('p:',p,tech)
+            print('p:', p, tech)
             points += p
             time.sleep(1)
-        print(c,'Total points:',points)
+        print(c, 'Total points:', points)

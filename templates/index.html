@@ -1,0 +1,21 @@
+{% autoescape None %}
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <title>Vert</title>
+    <script src="https://cdn.jsdelivr.net/npm/json-formatter-js"></script>
+  </head>
+  <body>
+    <header>VERT</header>
+    <main>{{body}}<div id="data"></div></main>
+    <footer></footer>
+    <script>
+    True = true;
+    False = false;
+    const myJSON = {{json}};
+    const formatter = new JSONFormatter(myJSON);
+    document.getElementById('data').appendChild(formatter.render());
+    </script>
+  </body>
+</html>

@@ -19,8 +19,8 @@ if not funds:
 	funds = db.get(config == 'funds')
 
 api_url = "https://api.binance.com/"
-api_key = "bcAQOCmtDZzlftttfxNfOr71YhKstYT7tt6iY88meCziWidrD79LeALUfxEoykTq"
-api_secret = b"E9F4qncSrYt7X644Hcc06uszC5JHUfNcRyXlWj6bkn4SQBxKubYWncVvOf8Fz6zc"
+api_key = ""
+api_secret = b""
 headers = {'X-MBX-APIKEY': api_key}
 r = requests.get(api_url+"api/v3/ping",headers=headers)
 #print(r.headers)
@@ -105,4 +105,5 @@ def seller(symbol):
 
 nthreads = 2
 
-threading.Thread(target=finder).start()
+if __name__ == "__main__":
+    threading.Thread(target=finder).start()
