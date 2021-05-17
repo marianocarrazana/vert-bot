@@ -2,25 +2,29 @@ import random
 import requests
 import re
 import time
+import os
 
-CRYPTO = [
-    {'binance_id': 'BNBUSDT', 'investing_id': 1036977},
-    # {'binance_id': 'XRPUSDT', 'investing_id': 1075586},
-    # {'binance_id': 'BTCUSDT', 'investing_id': 1035793},
-    # {'binance_id': 'ADAUSDT', 'investing_id': 1073899},
-    # {'binance_id': 'ETHUSDT', 'investing_id': 1035794},
-    # {'binance_id': 'UNIUSDT', 'investing_id': 1167226},
-    # {'binance_id': 'DOGEUSDT', 'investing_id': 1158819},
-    # {'binance_id': 'CHZUSDT', 'investing_id': 1152986},
-    # {'binance_id': 'BTTUSDT', 'investing_id': 1122392},
-    # {'binance_id': 'BCHUSDT', 'investing_id': 1099022},
-    # {'binance_id': 'XLMUSDT', 'investing_id': 1122657},
-    # {'binance_id': 'LINKUSDT', 'investing_id': 1137399},
-    # {'binance_id': 'DOTUSDT', 'investing_id': 1169564},
-    # {'binance_id': 'VETUSDT', 'investing_id': 1089757},
-    # {'binance_id': 'ALGOUSDT', 'investing_id': 1142193},
-    # {'binance_id': 'MATICUSDT', 'investing_id': 1131278}
-]
+if os.environ.get('BINANCE_TESTING') == 'True':
+    CRYPTO = [{'binance_id': 'BTCUSDT', 'investing_id': 1035793}]
+else:
+    CRYPTO = [
+        {'binance_id': 'BNBUSDT', 'investing_id': 1036977},
+        {'binance_id': 'XRPUSDT', 'investing_id': 1075586},
+        {'binance_id': 'BTCUSDT', 'investing_id': 1035793},
+        {'binance_id': 'ADAUSDT', 'investing_id': 1073899},
+        {'binance_id': 'ETHUSDT', 'investing_id': 1035794},
+        {'binance_id': 'UNIUSDT', 'investing_id': 1167226},
+        {'binance_id': 'DOGEUSDT', 'investing_id': 1158819},
+        {'binance_id': 'CHZUSDT', 'investing_id': 1152986},
+        {'binance_id': 'BTTUSDT', 'investing_id': 1122392},
+        {'binance_id': 'BCHUSDT', 'investing_id': 1099022},
+        {'binance_id': 'XLMUSDT', 'investing_id': 1122657},
+        {'binance_id': 'LINKUSDT', 'investing_id': 1137399},
+        {'binance_id': 'DOTUSDT', 'investing_id': 1169564},
+        {'binance_id': 'VETUSDT', 'investing_id': 1089757},
+        {'binance_id': 'ALGOUSDT', 'investing_id': 1142193},
+        {'binance_id': 'MATICUSDT', 'investing_id': 1131278}
+    ]
 
 INTERVALS = {
     '1min': 60,

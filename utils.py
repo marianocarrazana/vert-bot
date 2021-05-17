@@ -3,6 +3,7 @@ import ta
 import requests
 import urllib.parse
 from tinydb import TinyDB, Query
+from logger import log
 
 CANDLES_NAMES = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'closetime',
                  'quoteasset', 'numbertrades', 'takerbaseasset', 'takerquoteasset', 'ignore']
@@ -48,11 +49,12 @@ def calculateRSI(dataFrame):
         close=dataFrame['Close'], window=14)
     dataFrame['rsi'] = indicator_rsi.rsi()
 
-def sendTLMessage(message):
-	token = "1321535286:AAEpm9JB4zDhkANld8C4ct1-fUyAwkPCOHI"
-	channel = "@crybottesting"
-	message = urllib.parse.quote(message)
-	requests.get("https://api.telegram.org/bot"+token+"/sendMessage?chat_id="+channel+"&text="+message)
+def telegramMsg(message):
+    log.debug(f"Sending message:{message}")
+    token = "1321535286:AAEpm9JB4zDhkANld8C4ct1-fUyAwkPCOHI"
+    channel = "@crybottesting"
+    message = urllib.parse.quote(message)
+    requests.get("https://api.telegram.org/bot"+token+"/sendMessage?chat_id="+channel+"&text="+message)
     
 db = TinyDB('./db.json')
 query = Query()
