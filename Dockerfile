@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install pandas ta tinydb requests tornado python-binance logging
+RUN pip install pandas ta tinydb requests tornado python-binance
 
 CMD [ "python", "./server.py" ]
