@@ -1,4 +1,4 @@
-import finplot as fplt
+#import finplot as fplt
 import ta
 import requests
 import urllib.parse
@@ -20,19 +20,20 @@ def candleStringsToNumbers(bars):
 
 
 def plot(dt):
-    ax, ax2 = fplt.create_plot("plot", rows=2)
-    fplt.candlestick_ochl(dt[['Date', 'Open', 'Close', 'High', 'Low']], ax=ax)
-    volumes = dt[['Date', 'Open', 'Close', 'Volume']]
-    fplt.volume_ocv(volumes, ax=ax.overlay())
-    fplt.plot(dt['Date'], dt['Close'].rolling(
-        25).mean(), ax=ax, legend='ma-25')
-    fplt.plot(dt['bb_h'], color='#4e4ef1')
-    fplt.plot(dt['bb_ma'], color='#fe4e41')
-    fplt.plot(dt['bb_l'], color='#4efe41')
-    fplt.plot(dt['Date'], dt['rsi'], ax=ax2, color='#927', legend='rsi')
-    fplt.set_y_range(0, 100, ax=ax2)
-    fplt.add_band(25, 75, ax=ax)
-    fplt.show()
+    return True
+    # ax, ax2 = fplt.create_plot("plot", rows=2)
+    # fplt.candlestick_ochl(dt[['Date', 'Open', 'Close', 'High', 'Low']], ax=ax)
+    # volumes = dt[['Date', 'Open', 'Close', 'Volume']]
+    # fplt.volume_ocv(volumes, ax=ax.overlay())
+    # fplt.plot(dt['Date'], dt['Close'].rolling(
+    #     25).mean(), ax=ax, legend='ma-25')
+    # fplt.plot(dt['bb_h'], color='#4e4ef1')
+    # fplt.plot(dt['bb_ma'], color='#fe4e41')
+    # fplt.plot(dt['bb_l'], color='#4efe41')
+    # fplt.plot(dt['Date'], dt['rsi'], ax=ax2, color='#927', legend='rsi')
+    # fplt.set_y_range(0, 100, ax=ax2)
+    # fplt.add_band(25, 75, ax=ax)
+    # fplt.show()
 
 
 def calculateBB(dataFrame):
