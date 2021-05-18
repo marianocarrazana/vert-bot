@@ -1,21 +1,18 @@
-#from datetime import datetime
 import investing
 import utils
 import time
 #from binance.enums import TIME_IN_FORCE_GTC,SIDE_SELL
 #from binance.helpers import round_step_size
+from binance.exceptions import BinanceAPIException, BinanceOrderException
 from decimal import Decimal as D#, ROUND_DOWN, ROUND_UP
 #import decimal
 from logger import log
 
 def RSI(dataFrame, investing_id, pair, client):
-    #now = datetime.now()
-    #current_time = now.strftime("%H:%M:%S.%f")
     last = dataFrame["rsi"].iloc[-1]
     penultimate = dataFrame["rsi"].iloc[-2]
-    # print(current_time,last,penultimate)
     #long(pair, dataFrame, client)#test
-    return False
+    #return False
     if(penultimate < 30 and last >= 30):
         if investing.getTechnicalData(investing_id, '5mins') == 'Strong Buy':
             long(pair, dataFrame, client)
@@ -47,9 +44,17 @@ def long(pair, dataFrame, client):
             log.warning('Need moar')
             utils.remove('long')
             return
-        order = client.order_market_buy(
-            symbol=pair,
-            quantity=amount)
+        utils.telegramMsg("Buying {amount} of {pair}")
+        try:
+            order = client.order_market_buy(
+                symbol=pair,
+                quantity=amount)
+        except BinanceAPIException as e:
+            log.error(e)
+            return utils.remove('long')
+        except BinanceOrderException as e:
+            log.error(e)
+            return utils.remove('long')
         while True:
             log.debug(f"order_buy:{order}")
             if order['status'] == 'FILLED':

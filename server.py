@@ -6,6 +6,7 @@ import investing
 import os,json,re,time
 from binance import Client, ThreadedWebsocketManager
 from binance.enums import SIDE_SELL,TIME_IN_FORCE_GTC
+from binance.exceptions import BinanceAPIException, BinanceOrderException
 import utils,strategies
 from logger import log
 
@@ -170,7 +171,7 @@ def handle_book_message(msg):
     elif long['profit'] is None:
         return
     bid = float(msg['b'])
-    ask = float(msg['a'])
+    #ask = float(msg['a'])
     transactions['bids'].append(bid)
     tr_length = len(transactions['bids'])
     if tr_length > 300:
@@ -178,10 +179,17 @@ def handle_book_message(msg):
         transactions['increasing'] = transactions['bids'][0] < transactions['bids'][299]
         #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
         if bid > long['profit'] and not transactions['increasing']:
-            log.debug(f"{bid} {long['profit']}")
-            order = client.order_market_sell(
-                symbol=long['pair'],
-                quantity=long['qty'])
+            utils.telegramMsg(f"{bid} {long['profit']}")
+            try:
+                order = client.order_market_sell(
+                    symbol=long['pair'],
+                    quantity=long['qty'])
+            except BinanceAPIException as e:
+                log.error(e)
+                return utils.remove('long')
+            except BinanceOrderException as e:
+                log.error(e)
+                return utils.remove('long')
             log.info(f"profit:{order}")
             while True:
                 log.debug("order_buy:{order['status']}")
@@ -191,10 +199,17 @@ def handle_book_message(msg):
                 time.sleep(2)
                 order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
         elif bid <= long['stop_loss']:
-            log.debug(f"bid:{bid} stop:{long['stop_loss']} ask:{ask}")
-            order = client.order_market_sell(
-                symbol=long['pair'],
-                quantity=long['qty'])
+            utils.telegramMsg(f"bid:{bid} stop_loss:{long['stop_loss']}")
+            try:
+                order = client.order_market_sell(
+                    symbol=long['pair'],
+                    quantity=long['qty'])
+            except BinanceAPIException as e:
+                log.error(e)
+                return utils.remove('long')
+            except BinanceOrderException as e:
+                log.error(e)
+                return utils.remove('long')
             log.info(f"stop_loss:{order}")
             while True:
                 log.debug("order_buy:{order['status']}")

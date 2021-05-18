@@ -49,12 +49,12 @@ def calculateRSI(dataFrame):
         close=dataFrame['Close'], window=14)
     dataFrame['rsi'] = indicator_rsi.rsi()
 
-def telegramMsg(message):
+def telegramMsg(message,error=False):
     log.debug(f"Sending message:{message}")
     token = "1321535286:AAEpm9JB4zDhkANld8C4ct1-fUyAwkPCOHI"
     channel = "@crybottesting"
     message = urllib.parse.quote(message)
-    requests.get("https://api.telegram.org/bot"+token+"/sendMessage?chat_id="+channel+"&text="+message)
+    requests.get(f"https://api.telegram.org/bot{token}/sendMessage?chat_id={channel}&text={message}")
     
 db = TinyDB('./db.json')
 query = Query()

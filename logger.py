@@ -1,6 +1,17 @@
 import logging
+from logging import Handler
 import os
+import urllib.parse
+import requests
 
+class TelegramHandler(Handler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        token = "1321535286:AAEpm9JB4zDhkANld8C4ct1-fUyAwkPCOHI"
+        channel = "-1001232544210"
+        message = urllib.parse.quote(log_entry)
+        return requests.get(f"https://api.telegram.org/bot{token}/sendMessage?chat_id={channel}&text={message}")
+    
 class CustomFormatter(logging.Formatter):
     """Logging Formatter to add colors and count warning / errors"""
 
@@ -27,12 +38,20 @@ class CustomFormatter(logging.Formatter):
 log = logging.getLogger("__name__")
 debug_level = logging.getLevelName(os.environ.get('DEBUG_LEVEL')) if os.environ.get('DEBUG_LEVEL') is not None else logging.ERROR
 log.setLevel(debug_level)
+#console
 ch = logging.StreamHandler()
 ch.setLevel(debug_level)
 ch.setFormatter(CustomFormatter())
 log.addHandler(ch)
+#file
 fh = logging.FileHandler('debug.log')
 fh.setLevel(debug_level)
 file_formatter = logging.Formatter("%(asctime)s [%(levelname)s]\n%(message)s")
 fh.setFormatter(file_formatter)
 log.addHandler(fh)
+#telegram
+th = TelegramHandler()
+th.setLevel(logging.ERROR)
+telegram_formatter = logging.Formatter("[%(levelname)s]\n%(message)s")
+th.setFormatter(telegram_formatter)
+log.addHandler(th)
