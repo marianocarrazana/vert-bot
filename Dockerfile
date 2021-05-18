@@ -6,4 +6,4 @@ COPY . /app
 
 RUN pip install pandas ta tinydb requests tornado python-binance
 
-CMD [ "python", "./server.py" ]
+CMD [ "python", "server.py" ]
