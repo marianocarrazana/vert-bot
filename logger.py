@@ -20,14 +20,14 @@ class CustomFormatter(logging.Formatter):
     red = "\x1b[31;21m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    format = "%(asctime)s - (%(filename)s:%(lineno)d) - %(levelname)s\n%(message)s"
+    _format = "%(asctime)s - (%(filename)s:%(lineno)d) - %(levelname)s\n%(message)s"
 
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
-        logging.INFO: grey + format + reset,
-        logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.DEBUG: grey + _format + reset,
+        logging.INFO: grey + _format + reset,
+        logging.WARNING: yellow + _format + reset,
+        logging.ERROR: red + _format + reset,
+        logging.CRITICAL: bold_red + _format + reset
     }
 
     def format(self, record):
@@ -36,7 +36,7 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
     
 log = logging.getLogger("__name__")
-debug_level = logging.getLevelName(os.environ.get('DEBUG_LEVEL')) if os.environ.get('DEBUG_LEVEL') is not None else logging.ERROR
+debug_level = logging.getLevelName(os.environ.get('LOG_LEVEL')) if os.environ.get('LOG_LEVEL') is not None else logging.ERROR
 log.setLevel(debug_level)
 #console
 ch = logging.StreamHandler()

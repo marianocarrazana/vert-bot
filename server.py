@@ -9,7 +9,8 @@ from binance.enums import SIDE_SELL,TIME_IN_FORCE_GTC
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 import utils,strategies
 from logger import log
-
+import websocket
+log.debug(os.getpid())
 api_key = os.environ.get('BINANCE_API')
 api_secret = os.environ.get('BINANCE_SECRET')
 client = Client(api_key, api_secret)
@@ -123,16 +124,16 @@ def getDataFrame(pair):
     dt = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
     return utils.candleStringsToNumbers(dt)
 
-def analyzeMarket():
-    lastCrypto = utils.load('lastCrypto') or 0
-    pairData = investing.CRYPTO[lastCrypto]
-    df = getDataFrame(pairData['binance_id'])
-    utils.calculateRSI(df)
-    strategies.RSI(df)
-    lastCrypto = lastCrypto + 1
-    if len(investing.CRYPTO) == lastCrypto:
-        lastCrypto = 0
-    utils.save('lastCrypto',lastCrypto)
+# def analyzeMarket():
+#     lastCrypto = utils.load('lastCrypto') or 0
+#     pairData = investing.CRYPTO[lastCrypto]
+#     df = getDataFrame(pairData['binance_id'])
+#     utils.calculateRSI(df)
+#     strategies.RSI(df)
+#     lastCrypto = lastCrypto + 1
+#     if len(investing.CRYPTO) == lastCrypto:
+#         lastCrypto = 0
+#     utils.save('lastCrypto',lastCrypto)
 
 cryptoList = None
 multiplex_socket = None
@@ -143,32 +144,50 @@ def generateCryptoList():
     streamList = []
     for cr in investing.CRYPTO:
         cryptoList[cr['binance_id']] = {'dataFrame':None,'calculated':True,'investingId':cr['investing_id']}
-        streamList.append(cr['binance_id']+'@kline_1m')
+        streamList.append(cr['binance_id'].lower()+'@kline_1m')
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + '/'.join(streamList)
+    log.debug(stream_url)
+    #websocket.enableTrace(True)
+    ws = websocket.WebSocketApp(stream_url,
+                              on_message = handle_socket_message,
+                              on_error = websocket_error)
+    ws.run_forever()
     #print(cr['binance_id'],client.get_symbol_info(cr['binance_id']))
     #time.sleep(2)
-    log.debug(streamList)
-    multiplex_socket = None
-    multiplex_socket = twm.start_multiplex_socket(callback=handle_socket_message,
-                                streams=streamList)
+    # log.debug(streamList)
+    # multiplex_socket = None
+    # try:
+    #     multiplex_socket = twm.start_multiplex_socket(callback=handle_socket_message,
+    #                             streams=streamList)
+    # except Exception as e:
+    #     log.critical(e)
+
+def websocket_error(w,e):
+    log.error(e)
+    w.close()
+    time.sleep(60*60)
 
 handling_book = False
 #utils.save('long',{'pair':'XRPUSDT','profit':2,'stop_loss':1,'qty':'1'})
 transactions = {'bids':[],'asks':[],'increasing':False}
-def handle_book_message(msg):
-    global handling_book,book_socket,transactions,client,twm
+def handle_book_message(ws, msg):
+    global handling_book,book_socket,transactions,client
     if handling_book:
-        log.info('out')
+        log.debug('out')
         return
     handling_book = True
+    msg = json.loads(msg)
     long = utils.load('long')
     if long is None:
         log.info('out long')
-        twm.stop_socket(book_socket)
-        twmRestart()
-        generateCryptoList()
+        # twm.stop_socket(book_socket)
+        # twmRestart()
+        ws.close()
         handling_book = False
+        #generateCryptoList()
         return
     elif long['profit'] is None:
+        handling_book = False
         return
     bid = float(msg['b'])
     #ask = float(msg['a'])
@@ -227,25 +246,19 @@ def handle_book_message(msg):
     #print(diff_percent)
     handling_book = False
     
-def handle_socket_message(msg):
-    global cryptoList,client,book_socket,multiplex_socket,twm
+def handle_socket_message(ws, msg):
+    global cryptoList,client,book_socket,multiplex_socket
+    msg = json.loads(msg)
     #print(msg['stream'],msg['data']['e'])
     regex = r"(\w+)@"
     pair = re.search(regex, msg['stream'])[1].upper()
-    long = utils.load('long')
-    if long is not None:
-        twm.stop_socket(multiplex_socket)
-        twmRestart()
-        book_socket = None
-        book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=long['pair'])
-        return
     if cryptoList[pair]['dataFrame'] is None and cryptoList[pair]['calculated']:
         cryptoList[pair]['calculated'] = False
         cryptoList[pair]['dataFrame'] = getDataFrame(pair)
         cryptoList[pair]['dataFrame'].set_index('Date', inplace=True)
         log.debug(f"Calculated RSI for {pair}")
         cryptoList[pair]['calculated'] = True
-    kline = msg['data']['k'];
+    kline = msg['data']['k']
     index = kline['t']
     row = [[index,kline['o'],kline['h'],kline['l'],kline['c'],0,0,0,0,0,0,0]]
     newDF = pd.DataFrame(row, columns=utils.CANDLES_NAMES)
@@ -263,6 +276,20 @@ def handle_socket_message(msg):
         strategies.RSI(cryptoList[pair]['dataFrame'],cryptoList[pair]['investingId'],pair,client)
         cryptoList[pair]['calculated'] = True
         log.debug(f"{cryptoList[pair]['dataFrame']['rsi'].iloc[-1]},{index}")
+    long = utils.load('long')
+    if long is not None:
+        # twm.stop_socket(multiplex_socket)
+        # twmRestart()
+        log.debug(f"Opening websocket for {long}")
+        ws.close()
+        # pair = pair.lower()
+        # wss = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair}@bookTicker",
+        #                       on_message = handle_book_message,
+        #                       on_error = websocket_error)
+        # wss.run_forever()
+        # book_socket = None
+        # book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=long['pair'])
+        return
     
 def checkOcoOrder():
     oco = utils.load('oco')
@@ -274,28 +301,39 @@ def checkOcoOrder():
         if order['status'] == "FILLED":
             utils.remove('oco')
     
-def twmRestart():
-    global twm,api_key,api_secret
-    twm.stop()
-    twm = None
-    time.sleep(1)
-    twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
-    twm.start()
+# def twmRestart():
+#     global twm,api_key,api_secret
+#     twm.stop()
+#     twm = None
+#     time.sleep(1)
+#     twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
+#     twm.start()
     
 if __name__ == "__main__":
-    app = make_app()
-    port = 8888
-    app.listen(port)
-    log.info(f"Server listening on http://localhost:{port}")
-    #clen = len(investing.CRYPTO)*2
-    scheduler = ioloop.PeriodicCallback(checkOcoOrder, minutes(1))
-    scheduler.start() 
-    twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
+    #twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
     #twm.start_kline_socket(callback=handle_socket_message, symbol=symbol)
-    twm.start()
-    longDB = utils.load('long')
-    if longDB is None:
-        generateCryptoList()
-    else:
-        book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=longDB['pair'])
-    ioloop.IOLoop.current().start()
+    #twm.start()
+    #log.debug(twm)
+    while True:
+        log.debug('Starting loop')
+        longDB = utils.load('long')
+        if longDB is None:
+            generateCryptoList()
+        else:
+            pair_book = longDB['pair'].lower()
+            wss = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
+                                on_message = handle_book_message,
+                                on_error = websocket_error)
+
+            wss.run_forever()
+        log.debug('Ending loop')
+        #book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=longDB['pair'])
+    # if os.environ.get('TORNADO_ENABLED') == 'True':
+    #     app = make_app()
+    #     port = 8888
+    #     app.listen(port)
+    #     log.info(f"Tornado listening on http://localhost:{port}")
+    #     #clen = len(investing.CRYPTO)*2
+    #     scheduler = ioloop.PeriodicCallback(checkOcoOrder, minutes(1))
+    #     scheduler.start() 
+    #     ioloop.IOLoop.current().start()

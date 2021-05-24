@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install pandas ta tinydb requests tornado python-binance
+RUN pip install pandas ta tinydb requests tornado python-binance websocket-client
 
 CMD [ "python", "server.py" ]

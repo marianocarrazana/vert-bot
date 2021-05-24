@@ -1,6 +1,7 @@
 import investing
 import utils
 import time
+import os
 #from binance.enums import TIME_IN_FORCE_GTC,SIDE_SELL
 #from binance.helpers import round_step_size
 from binance.exceptions import BinanceAPIException, BinanceOrderException
@@ -11,14 +12,14 @@ from logger import log
 def RSI(dataFrame, investing_id, pair, client):
     last = dataFrame["rsi"].iloc[-1]
     penultimate = dataFrame["rsi"].iloc[-2]
-    #long(pair, dataFrame, client)#test
-    #return False
+    # long(pair, dataFrame, client)#test
+    # return False
     if(penultimate < 30 and last >= 30):
         if investing.getTechnicalData(investing_id, '5mins') == 'Strong Buy':
             long(pair, dataFrame, client)
     elif(penultimate > 70 and last <= 70):
         if investing.getTechnicalData(investing_id, '5mins') == 'Strong Sell':
-            short(pair, dataFrame)
+            short(pair, dataFrame, client)
 
 
 def long(pair, dataFrame, client):
@@ -36,15 +37,16 @@ def long(pair, dataFrame, client):
     win_percent = (diff / (row['Close'] / 100))/100
     if win_percent > 0.005:#0.5%
         balance = float(client.get_asset_balance(asset='USDT')['free'])
-        amount = balance if balance < 20.0 else 20.0
-        amount = (amount*0.9) / row['Close']
+        max_investment = float(os.environ.get('MAX_INVESTMENT') or 20)
+        amount = balance if balance < max_investment else max_investment
+        amount = (amount*0.95) / row['Close']
         amount = D.from_float(amount).quantize(D(str(minimum)))
         log.debug(f"amount:{amount} minimum:{minimum}")
         if amount < minimum:
             log.warning('Need moar')
             utils.remove('long')
             return
-        utils.telegramMsg("Buying {amount} of {pair}")
+        utils.telegramMsg(f"Buying {amount} of {pair}")
         try:
             order = client.order_market_buy(
                 symbol=pair,
