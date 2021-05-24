@@ -275,7 +275,7 @@ def handle_socket_message(ws, msg):
         utils.calculateRSI(cryptoList[pair]['dataFrame'])
         strategies.RSI(cryptoList[pair]['dataFrame'],cryptoList[pair]['investingId'],pair,client)
         cryptoList[pair]['calculated'] = True
-        log.debug(f"{cryptoList[pair]['dataFrame']['rsi'].iloc[-1]},{index}")
+        #log.debug(f"{cryptoList[pair]['dataFrame']['rsi'].iloc[-1]},{index}")
     long = utils.load('long')
     if long is not None:
         # twm.stop_socket(multiplex_socket)
