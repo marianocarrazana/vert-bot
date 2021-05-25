@@ -249,12 +249,13 @@ def handle_book_message(ws, msg):
 def handle_socket_message(ws, msg):
     global cryptoList,client,book_socket,multiplex_socket
     msg = json.loads(msg)
-    #print(msg['stream'],msg['data']['e'])
+    #print(msg)
     regex = r"(\w+)@"
     pair = re.search(regex, msg['stream'])[1].upper()
     if cryptoList[pair]['dataFrame'] is None and cryptoList[pair]['calculated']:
         cryptoList[pair]['calculated'] = False
         cryptoList[pair]['dataFrame'] = getDataFrame(pair)
+        log.debug(cryptoList[pair]['dataFrame'])
         cryptoList[pair]['dataFrame'].set_index('Date', inplace=True)
         log.debug(f"Calculated RSI for {pair}")
         cryptoList[pair]['calculated'] = True
@@ -269,7 +270,6 @@ def handle_socket_message(ws, msg):
     else:
         cryptoList[pair]['dataFrame'] = cryptoList[pair]['dataFrame'].append(newDF)
         cryptoList[pair]['dataFrame'] = cryptoList[pair]['dataFrame'].drop(cryptoList[pair]['dataFrame'].index[0])
-    #print(len(cryptoList[pair]['dataFrame']),cryptoList[pair]['dataFrame']['Close'].iloc[-1],cryptoList[pair]['dataFrame']['Close'].iloc[-2])
     if cryptoList[pair]['calculated']:
         cryptoList[pair]['calculated'] = False
         utils.calculateRSI(cryptoList[pair]['dataFrame'])
