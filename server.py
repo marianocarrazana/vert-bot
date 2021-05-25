@@ -139,7 +139,7 @@ cryptoList = None
 multiplex_socket = None
 book_socket = None
 def generateCryptoList():
-    global cryptoList,book_socket,multiplex_socket,twm
+    global cryptoList,book_socket,multiplex_socket
     cryptoList= {}
     streamList = []
     for cr in investing.CRYPTO:
@@ -198,7 +198,7 @@ def handle_book_message(ws, msg):
         transactions['increasing'] = transactions['bids'][0] < transactions['bids'][299]
         #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
         if bid > long['profit'] and not transactions['increasing']:
-            utils.telegramMsg(f"{bid} {long['profit']}")
+            utils.telegramMsg(f"<b>Profit</b>\nBid:{bid}\nExpected:{long['profit']}")
             try:
                 order = client.order_market_sell(
                     symbol=long['pair'],
@@ -218,7 +218,7 @@ def handle_book_message(ws, msg):
                 time.sleep(2)
                 order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
         elif bid <= long['stop_loss']:
-            utils.telegramMsg(f"bid:{bid} stop_loss:{long['stop_loss']}")
+            utils.telegramMsg(f"<b>Stop Loss</>\nBid:{bid}\nExpected:{long['stop_loss']}")
             try:
                 order = client.order_market_sell(
                     symbol=long['pair'],

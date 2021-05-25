@@ -15,10 +15,12 @@ def RSI(dataFrame, investing_id, pair, client):
     # long(pair, dataFrame, client)#test
     # return False
     if(penultimate < 30 and last >= 30):
-        if investing.getTechnicalData(investing_id, '5mins') == 'Strong Buy':
+        tigger = 'Strong Buy' if investing_id.lower().find('down') == -1 else 'Strong Sell'
+        if investing.getTechnicalData(investing_id, '5mins') == tigger:
             long(pair, dataFrame, client)
     elif(penultimate > 70 and last <= 70):
-        if investing.getTechnicalData(investing_id, '5mins') == 'Strong Sell':
+        tigger = 'Strong Buy' if investing_id.lower().find('down') != -1 else 'Strong Sell'
+        if investing.getTechnicalData(investing_id, '5mins') == tigger:
             short(pair, dataFrame, client)
 
 
@@ -46,7 +48,7 @@ def long(pair, dataFrame, client):
             log.warning('Need moar')
             utils.remove('long')
             return
-        utils.telegramMsg(f"Buying {amount} of {pair}")
+        utils.telegramMsg(f"Buying {amount} of <b>{pair}</b> at {price}")
         try:
             order = client.order_market_buy(
                 symbol=pair,

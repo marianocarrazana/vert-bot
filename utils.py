@@ -55,7 +55,7 @@ def telegramMsg(message,error=False):
     token = "1321535286:AAEpm9JB4zDhkANld8C4ct1-fUyAwkPCOHI"
     channel = "@crybottesting"
     message = urllib.parse.quote(message)
-    requests.get(f"https://api.telegram.org/bot{token}/sendMessage?chat_id={channel}&text={message}")
+    requests.get(f"https://api.telegram.org/bot{token}/sendMessage?chat_id={channel}&text={message}&parse_mode=html")
     
 db = TinyDB('./db.json')
 query = Query()
