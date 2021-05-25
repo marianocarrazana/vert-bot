@@ -15,12 +15,15 @@ def RSI(dataFrame, investing_id, pair, client):
     # long(pair, dataFrame, client)#test
     # return False
     if(penultimate < 30 and last >= 30):
-        tigger = 'Strong Buy' if investing_id.lower().find('down') == -1 else 'Strong Sell'
-        if investing.getTechnicalData(investing_id, '5mins') == tigger:
+        trigger = 'Strong Buy' if investing_id.lower().find('down') == -1 else 'Strong Sell'
+        log.debug(trigger)
+        invest_state = investing.getTechnicalData(investing_id, '5mins')
+        log.debug(invest_state)
+        if invest_state == trigger:
             long(pair, dataFrame, client)
     elif(penultimate > 70 and last <= 70):
-        tigger = 'Strong Buy' if investing_id.lower().find('down') != -1 else 'Strong Sell'
-        if investing.getTechnicalData(investing_id, '5mins') == tigger:
+        trigger = 'Strong Buy' if investing_id.lower().find('down') != -1 else 'Strong Sell'
+        if investing.getTechnicalData(investing_id, '5mins') == trigger:
             short(pair, dataFrame, client)
 
 
