@@ -139,7 +139,7 @@ def getTechnicalData(investing_id, interval):
 
     matches = re.search(regex, req.text, re.MULTILINE | re.IGNORECASE)
 
-    return matches[1]
+    return matches[1] or 'null'
 
 
 def getAllTechnicalData():
