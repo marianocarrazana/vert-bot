@@ -29,6 +29,8 @@ def RSI(dataFrame, investing_id, pair, client):
 
 
 def long(pair, dataFrame, client):
+    if utils.load('long') is not None:
+        return
     utils.save('long',{'pair':pair,'profit':None,'stop_loss':None,'qty':'0'})
     symbol_info = utils.getSymbolInfo(pair,client)
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])

@@ -6,8 +6,8 @@ import os
 
 if os.environ.get('BINANCE_TESTING') == 'True':
     CRYPTO = [
-        #{'binance_id': 'BTCUSDT', 'investing_id': 1035793},
-        {'binance_id': 'BTCDOWNUSDT', 'investing_id': 1035793}
+        {'binance_id': 'BNBUSDT', 'investing_id': 1036977},
+        {'binance_id': 'BTCUSDT', 'investing_id': 1035793},
     ]
 else:
     CRYPTO = [

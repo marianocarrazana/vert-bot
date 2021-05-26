@@ -1,6 +1,7 @@
 from tornado import ioloop
 from tornado import web
 from tornado import template
+import threading
 import pandas as pd 
 import investing
 import os,json,re,time
@@ -10,21 +11,33 @@ from binance.exceptions import BinanceAPIException, BinanceOrderException
 import utils,strategies
 from logger import log
 import websocket
-log.debug(os.getpid())
+
+#Global Variables
 api_key = os.environ.get('BINANCE_API')
 api_secret = os.environ.get('BINANCE_SECRET')
 client = Client(api_key, api_secret)
 if os.environ.get('BINANCE_TESTING') == 'True':
     client.API_URL = 'https://testnet.binance.vision/api'
+cryptoList = None
+multiplex_socket = None
+book_socket = None
+task_update = True
+closed_connections = 0
 
 def minutes(m): return m*1000*60
 
 class MainHandler(web.RequestHandler):
     def get(self):
-        loader = template.Loader("./templates")
-        account = client.get_account()
-        log.debug(account)
-        self.write(loader.load("index.html").generate(json=account,body=""))
+        self.write(str(utils.load('long')))
+        # loader = template.Loader("./templates")
+        # account = client.get_account()
+        # log.debug(account)
+        # self.write(loader.load("index.html").generate(json=account,body=""))
+
+class LogHandler(web.RequestHandler):
+    def get(self):
+        f = open("debug.log", "r").read()
+        self.write(f.replace("\n","<br>"))
 
 class PricesHandler(web.RequestHandler):
     def get(self, pair):
@@ -111,12 +124,13 @@ class OrderHandler(web.RequestHandler):
 def make_app():
     return web.Application([
         (r"/", MainHandler),
-        (r"/price/(\w+)", PricesHandler),
-        (r"/klines/(\w+)", KlinesHandler),
-        (r"/test/(\w+)", TestHandler),
-        (r"/buy/(\w+)/(\d+)", BuyHandler),
-        (r"/oco/(\w+)/([\.\d]+)/([\.\d]+)", OcoHandler),
-        (r"/order/(\w+)/(\d+)", OrderHandler),
+        (r"/log", LogHandler),
+        # (r"/price/(\w+)", PricesHandler),
+        # (r"/klines/(\w+)", KlinesHandler),
+        # (r"/test/(\w+)", TestHandler),
+        # (r"/buy/(\w+)/(\d+)", BuyHandler),
+        # (r"/oco/(\w+)/([\.\d]+)/([\.\d]+)", OcoHandler),
+        # (r"/order/(\w+)/(\d+)", OrderHandler),
     ])
 
 def getDataFrame(pair):
@@ -134,24 +148,35 @@ def getDataFrame(pair):
 #     if len(investing.CRYPTO) == lastCrypto:
 #         lastCrypto = 0
 #     utils.save('lastCrypto',lastCrypto)
-
-cryptoList = None
-multiplex_socket = None
-book_socket = None
-def generateCryptoList():
-    global cryptoList,book_socket,multiplex_socket
-    cryptoList= {}
-    streamList = []
-    for cr in investing.CRYPTO:
-        cryptoList[cr['binance_id']] = {'dataFrame':None,'calculated':True,'investingId':cr['investing_id']}
-        streamList.append(cr['binance_id'].lower()+'@kline_1m')
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + '/'.join(streamList)
-    log.debug(stream_url)
-    #websocket.enableTrace(True)
-    ws = websocket.WebSocketApp(stream_url,
+ws_klines = []
+def open_kline_stream(pair,index):
+    global ws_klines
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@kline_1m'
+    ws_klines[index] = websocket.WebSocketApp(stream_url,
                               on_message = handle_socket_message,
                               on_error = websocket_error)
-    ws.run_forever()
+    wst = threading.Thread(target=ws_klines[index].run_forever)
+    wst.daemon = True
+    wst.start()
+
+def generateCryptoList():
+    global cryptoList,book_socket,multiplex_socket,ws_klines,closed_connections
+    cryptoList= {}
+    closed_connections = 0
+    #streamList = []
+    ws_klines = []
+    i = 0
+    for cr in investing.CRYPTO:
+        ws_klines.append(None)
+        cryptoList[cr['binance_id']] = {'dataFrame':None,'calculated':True,'investingId':cr['investing_id']}
+        #streamList.append(cr['binance_id'].lower()+'@kline_1m')
+        open_kline_stream(cr['binance_id'],i)
+        i += 1
+        time.sleep(1)
+    #stream_url = 'wss://stream.binance.com:9443/stream?streams=' + '/'.join(streamList)
+    #log.debug(stream_url)
+    #websocket.enableTrace(True)
+    
     #print(cr['binance_id'],client.get_symbol_info(cr['binance_id']))
     #time.sleep(2)
     # log.debug(streamList)
@@ -171,7 +196,7 @@ handling_book = False
 #utils.save('long',{'pair':'XRPUSDT','profit':2,'stop_loss':1,'qty':'1'})
 transactions = {'bids':[],'asks':[],'increasing':False}
 def handle_book_message(ws, msg):
-    global handling_book,book_socket,transactions,client
+    global handling_book,book_socket,transactions,client,task_update
     if handling_book:
         log.debug('out')
         return
@@ -184,6 +209,7 @@ def handle_book_message(ws, msg):
         # twmRestart()
         ws.close()
         handling_book = False
+        task_update = True
         #generateCryptoList()
         return
     elif long['profit'] is None:
@@ -211,7 +237,7 @@ def handle_book_message(ws, msg):
                 return utils.remove('long')
             log.info(f"profit:{order}")
             while True:
-                log.debug("order_buy:{order['status']}")
+                log.debug(f"order_buy:{order['status']}")
                 if order['status'] == 'FILLED':
                     utils.remove('long')
                     break
@@ -231,7 +257,7 @@ def handle_book_message(ws, msg):
                 return utils.remove('long')
             log.info(f"stop_loss:{order}")
             while True:
-                log.debug("order_buy:{order['status']}")
+                log.debug(f"order_buy:{order['status']}")
                 if order['status'] == 'FILLED':
                     utils.remove('long')
                     break
@@ -247,7 +273,16 @@ def handle_book_message(ws, msg):
     handling_book = False
     
 def handle_socket_message(ws, msg):
-    global cryptoList,client,book_socket,multiplex_socket
+    global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
+    long = utils.load('long')
+    if long is not None:
+        if long['profit'] is not None:
+            ws.close()
+            closed_connections += 1
+            if(closed_connections == len(cryptoList)):
+                log.debug(f"Opening websocket for {long}")
+                task_update = True
+        return
     msg = json.loads(msg)
     #print(msg)
     regex = r"(\w+)@"
@@ -255,7 +290,7 @@ def handle_socket_message(ws, msg):
     if cryptoList[pair]['dataFrame'] is None and cryptoList[pair]['calculated']:
         cryptoList[pair]['calculated'] = False
         cryptoList[pair]['dataFrame'] = getDataFrame(pair)
-        log.debug(cryptoList[pair]['dataFrame'])
+        #log.debug(cryptoList[pair]['dataFrame'])
         cryptoList[pair]['dataFrame'].set_index('Date', inplace=True)
         log.debug(f"Calculated RSI for {pair}")
         cryptoList[pair]['calculated'] = True
@@ -276,20 +311,6 @@ def handle_socket_message(ws, msg):
         strategies.RSI(cryptoList[pair]['dataFrame'],cryptoList[pair]['investingId'],pair,client)
         cryptoList[pair]['calculated'] = True
         #log.debug(f"{cryptoList[pair]['dataFrame']['rsi'].iloc[-1]},{index}")
-    long = utils.load('long')
-    if long is not None:
-        # twm.stop_socket(multiplex_socket)
-        # twmRestart()
-        log.debug(f"Opening websocket for {long}")
-        ws.close()
-        # pair = pair.lower()
-        # wss = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair}@bookTicker",
-        #                       on_message = handle_book_message,
-        #                       on_error = websocket_error)
-        # wss.run_forever()
-        # book_socket = None
-        # book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=long['pair'])
-        return
     
 def checkOcoOrder():
     oco = utils.load('oco')
@@ -308,32 +329,51 @@ def checkOcoOrder():
 #     time.sleep(1)
 #     twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
 #     twm.start()
-    
+def open_book_socket(pair_book):
+    ws_book = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
+                                on_message = handle_book_message,
+                                on_error = websocket_error)
+    wst = threading.Thread(target=ws_book.run_forever)
+    wst.daemon = True
+    wst.start()
+
+async def check_task():
+    global task_update
+    if not task_update:
+        return
+    task_update = False
+    longDB = utils.load('long')
+    if longDB is None:
+        generateCryptoList()
+    else:
+        open_book_socket(longDB['pair'].lower())
+
 if __name__ == "__main__":
     #twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
     #twm.start_kline_socket(callback=handle_socket_message, symbol=symbol)
     #twm.start()
     #log.debug(twm)
-    while True:
-        log.debug('Starting loop')
-        longDB = utils.load('long')
-        if longDB is None:
-            generateCryptoList()
-        else:
-            pair_book = longDB['pair'].lower()
-            wss = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
-                                on_message = handle_book_message,
-                                on_error = websocket_error)
+    # while True:
+    #     log.debug('Starting loop')
+    #     longDB = utils.load('long')
+    #     if longDB is None:
+    #         generateCryptoList()
+    #     else:
+    #         pair_book = longDB['pair'].lower()
+    #         wss = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
+    #                             on_message = handle_book_message,
+    #                             on_error = websocket_error)
 
-            wss.run_forever()
-        log.debug('Ending loop')
+    #         wss.run_forever()
+    #     log.debug('Ending loop')
         #book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=longDB['pair'])
-    # if os.environ.get('TORNADO_ENABLED') == 'True':
-    #     app = make_app()
-    #     port = 8888
-    #     app.listen(port)
-    #     log.info(f"Tornado listening on http://localhost:{port}")
-    #     #clen = len(investing.CRYPTO)*2
-    #     scheduler = ioloop.PeriodicCallback(checkOcoOrder, minutes(1))
-    #     scheduler.start() 
-    #     ioloop.IOLoop.current().start()
+    #if os.environ.get('TORNADO_ENABLED') == 'f':
+    app = make_app()
+    port = 8888
+    app.listen(port)
+    log.info(f"Tornado listening on http://localhost:{port}")
+    #clen = len(investing.CRYPTO)*2
+    scheduler = ioloop.PeriodicCallback(check_task, 1)
+    scheduler.start() 
+    #ioloop.IOLoop.current().spawn_callback(check_task)
+    ioloop.IOLoop.current().start()#run forever
