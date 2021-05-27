@@ -16,9 +16,7 @@ def RSI(dataFrame, investing_id, pair, client):
     # return False
     if(penultimate < 30 and last >= 30):
         trigger = 'buy' if pair.lower().find('down') == -1 else 'sell'
-        log.debug(trigger)
         invest_state = investing.getTechnicalData(investing_id, '5mins').lower()
-        log.debug(invest_state)
         if invest_state.find(trigger) != -1:
             long(pair, dataFrame, client)
     elif(penultimate > 70 and last <= 70):
@@ -60,9 +58,11 @@ def long(pair, dataFrame, client):
                 symbol=pair,
                 quantity=amount)
         except BinanceAPIException as e:
+            log.debug(symbol_info)
             log.error(e)
             return utils.remove('long')
         except BinanceOrderException as e:
+            log.debug(symbol_info)
             log.error(e)
             return utils.remove('long')
         while True:

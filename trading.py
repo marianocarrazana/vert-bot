@@ -1,4 +1,4 @@
-import time
+from time import sleep
 import requests, hmac, hashlib
 from datetime import datetime
 import ta
