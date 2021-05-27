@@ -198,7 +198,7 @@ def handle_socket_message(ws, msg):
         cryptoList[pair]['dataFrame'] = getDataFrame(pair)
         #log.debug(cryptoList[pair]['dataFrame'])
         cryptoList[pair]['dataFrame'].set_index('Date', inplace=True)
-        log.debug(f"Calculated RSI for {pair}")
+        #log.debug(f"Calculated RSI for {pair}")
         cryptoList[pair]['calculated'] = True
     kline = msg['data']['k']
     index = kline['t']
@@ -250,8 +250,10 @@ async def check_task():
     task_update = False
     longDB = utils.load('long')
     if longDB is None:
+        log.debug('Examining market...')
         generateCryptoList()
     else:
+        log.debug('Selling crypto...')
         open_book_socket(longDB['pair'].lower())
 
 if __name__ == "__main__":

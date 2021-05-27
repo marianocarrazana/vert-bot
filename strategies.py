@@ -58,11 +58,11 @@ def long(pair, dataFrame, client):
                 symbol=pair,
                 quantity=amount)
         except BinanceAPIException as e:
-            log.debug(symbol_info)
+            log.info(symbol_info)
             log.error(e)
             return utils.remove('long')
         except BinanceOrderException as e:
-            log.debug(symbol_info)
+            log.info(symbol_info)
             log.error(e)
             return utils.remove('long')
         while True:
