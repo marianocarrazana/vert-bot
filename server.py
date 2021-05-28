@@ -40,7 +40,7 @@ def make_app():
     ])
 
 def getDataFrame(pair):
-    bars = client.get_klines(symbol=pair.upper(), interval=Client.KLINE_INTERVAL_1MINUTE, limit=250)
+    bars = client.get_klines(symbol=pair.upper(), interval=Client.KLINE_INTERVAL_5MINUTE, limit=250)
     dt = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
     return utils.candleStringsToNumbers(dt)
 
@@ -57,7 +57,7 @@ def getDataFrame(pair):
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@kline_1m'
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@kline_5m'
     ws_klines[index] = websocket.WebSocketApp(stream_url,
                               on_message = handle_socket_message,
                               on_error = websocket_error)
@@ -243,6 +243,16 @@ def open_book_socket(pair_book):
     wst.daemon = True
     wst.start()
 
+def update_database():
+    global cryptoList
+    longDB = utils.load('long')
+    if longDB is None:
+        for key in cryptoList:
+            if cryptoList[key]['dataFrame'] is not None:
+                if 'rsi' in cryptoList[key]['dataFrame']:
+                    utils.save(f'RSI{key}',cryptoList[key]['dataFrame']['rsi'].iloc[-31:-1].tolist())
+
+
 async def check_task():
     global task_update
     if not task_update:
@@ -281,7 +291,9 @@ if __name__ == "__main__":
     app.listen(port)
     log.info(f"Tornado listening on http://localhost:{port}")
     #clen = len(investing.CRYPTO)*2
-    scheduler = ioloop.PeriodicCallback(check_task, 1)
-    scheduler.start() 
+    tsks = ioloop.PeriodicCallback(check_task, 1)
+    tsks.start() 
+    # updateDB = ioloop.PeriodicCallback(update_database, 5)
+    # updateDB.start() 
     #ioloop.IOLoop.current().spawn_callback(check_task)
     ioloop.IOLoop.current().start()#run forever

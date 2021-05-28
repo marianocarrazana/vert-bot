@@ -1,16 +1,23 @@
 from tornado import web
 from tornado import template
-from server import client
-from server import getDataFrame
+from server import client,getDataFrame
 from binance import Client
 from binance.enums import SIDE_SELL,TIME_IN_FORCE_GTC
 import utils
 import pandas as pd 
 import json
+from investing import CRYPTO
 
 class MainHandler(web.RequestHandler):
     def get(self):
         self.write(str(utils.load('long')))
+        # self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        # str_rsi = "<h3>RSI-strategy</h3>"
+        # for cr in CRYPTO:
+        #     data = utils.load('RSI-'+cr['binance_id'])
+        #     str_rsi += f"<b>{cr['binance_id']}</b>:{data}<br>"
+        # task = "Examining market" if utils.load('long') is None else ""
+        # self.write(f"<b>Task:</b>{task}<br>{str_rsi}")
         # loader = template.Loader("./templates")
         # account = client.get_account()
         # log.debug(account)
@@ -18,6 +25,7 @@ class MainHandler(web.RequestHandler):
 
 class LogHandler(web.RequestHandler):
     def get(self):
+        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         f = open("debug.log", "r").read()
         self.write(f.replace("\n","<br>"))
 
