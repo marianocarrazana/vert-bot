@@ -113,8 +113,7 @@ def sell_long(long,price):
     while True:
         log.debug(f"order_buy:{order['status']}")
         if order['status'] == 'FILLED':
-            utils.remove('long')
-            break
+            return utils.remove('long')
         time.sleep(2)
         order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
 
@@ -201,10 +200,12 @@ def handle_long_message(ws, msg):
         next_stop += stop_levels 
     if last_price < stop_loss:
         sell_long(long,last_price)
+        handling_long = False
         return
     a_up = ta.trend.aroon_up(long_dataframe['Close'], window=14, fillna=False)
     if a_up.iloc[-1] > 95:
         sell_long(long,last_price)
+        handling_long = False
         return
     handling_long = False
 

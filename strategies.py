@@ -32,6 +32,8 @@ def dc_aroon(crypto_data,pair,client):
     df = crypto_data['dataFrame']
     if df['Close'].iloc[-2] < df['Open'].iloc[-2]:#red stick
         return
+    if df['Close'].iloc[-1] < df['Open'].iloc[-1]:#red stick
+        return
     period = 14
     dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
@@ -45,7 +47,7 @@ def dc_aroon(crypto_data,pair,client):
             aroon_down = aroon.aroon_down()
             if aroon_down.iloc[-1] > 80:
                 aroon_up = aroon.aroon_up()
-                if aroon_up < 20:
+                if aroon_up.iloc[-1] < 20:
                     sl_levels = maximum - dc_low.iloc[-1]
                     long(pair,df,client,dc_low.iloc[-1],sl_levels)
 
