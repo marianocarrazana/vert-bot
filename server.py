@@ -105,15 +105,18 @@ def sell_long(long,price):
             quantity=long['qty'])
     except BinanceAPIException as e:
         log.error(e)
-        return utils.remove('long')
+        utils.remove('long')
+        return
     except BinanceOrderException as e:
         log.error(e)
-        return utils.remove('long')
+        utils.remove('long')
+        return
     log.info(f"Sell long order:{order}")
     while True:
         log.debug(f"order_buy:{order['status']}")
         if order['status'] == 'FILLED':
-            return utils.remove('long')
+            utils.remove('long')
+            break 
         time.sleep(2)
         order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
 
@@ -246,6 +249,9 @@ async def check_task():
         log.debug('Examining market...')
         generateCryptoList()
     else:
+        if longDB['purchase_price'] is None:
+            utils.remove('long')
+            return
         log.debug('Selling crypto...')
         #open_book_socket(longDB['pair'].lower())
         stop_loss = longDB['stop_loss']

@@ -81,7 +81,7 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
     if amount < minimum:
         log.warning('Need moar')
         utils.remove('long')
-        time.sleep(30)
+        time.sleep(2)
         return
     utils.telegramMsg(f"Buying {amount} of <b>{pair}</b> at {price}")
     try:
