@@ -29,7 +29,7 @@ else:
         {'binance_id': 'DOTUSDT', 'investing_id': 1169564},
         {'binance_id': 'VETUSDT', 'investing_id': 1089757},
         {'binance_id': 'ALGOUSDT', 'investing_id': 1142193},
-        {'binance_id': 'MATICUSDT', 'investing_id': 1131278}
+        #{'binance_id': 'MATICUSDT', 'investing_id': 1131278}
     ]
 
 INTERVALS = {
