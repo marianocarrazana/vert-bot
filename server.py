@@ -48,16 +48,23 @@ def getDataFrame(pair):
     dt = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
     return utils.candleStringsToNumbers(dt)
 
-# def analyzeMarket():
-#     lastCrypto = utils.load('lastCrypto') or 0
-#     pairData = investing.CRYPTO[lastCrypto]
-#     df = getDataFrame(pairData['binance_id'])
-#     utils.calculateRSI(df)
-#     strategies.RSI(df)
-#     lastCrypto = lastCrypto + 1
-#     if len(investing.CRYPTO) == lastCrypto:
-#         lastCrypto = 0
-#     utils.save('lastCrypto',lastCrypto)
+def update_kline(df,pair,msg):
+    if df is None:
+        df = getDataFrame(pair)
+        df.set_index('Date', inplace=True)
+    kline = msg['data']['k']
+    index = kline['t']
+    row = [[index,kline['o'],kline['h'],kline['l'],kline['c'],0,0,0,0,0,0,0]]
+    newDF = pd.DataFrame(row, columns=utils.CANDLES_NAMES)
+    newDF = utils.candleStringsToNumbers(newDF)
+    newDF.set_index('Date', inplace=True)
+    if index in df.index:
+        df.loc[index] = newDF.loc[index]
+    else:
+        df = df.append(newDF)
+        df = df.drop(df.index[0])
+    return df
+
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
@@ -73,29 +80,14 @@ def generateCryptoList():
     global cryptoList,book_socket,multiplex_socket,ws_klines,closed_connections
     cryptoList= {}
     closed_connections = 0
-    #streamList = []
     ws_klines = []
     i = 0
     for cr in investing.CRYPTO:
         ws_klines.append(None)
         cryptoList[cr['binance_id']] = {'dataFrame':None,'calculated':True,'investingId':cr['investing_id']}
-        #streamList.append(cr['binance_id'].lower()+'@kline_1m')
         open_kline_stream(cr['binance_id'],i)
         i += 1
         time.sleep(1)
-    #stream_url = 'wss://stream.binance.com:9443/stream?streams=' + '/'.join(streamList)
-    #log.debug(stream_url)
-    #websocket.enableTrace(True)
-    
-    #print(cr['binance_id'],client.get_symbol_info(cr['binance_id']))
-    #time.sleep(2)
-    # log.debug(streamList)
-    # multiplex_socket = None
-    # try:
-    #     multiplex_socket = twm.start_multiplex_socket(callback=handle_socket_message,
-    #                             streams=streamList)
-    # except Exception as e:
-    #     log.critical(e)
 
 def websocket_error(w,e):
     log.error(e)
@@ -138,12 +130,9 @@ def handle_book_message(ws, msg):
     long = utils.load('long')
     if long is None:
         log.info('out long')
-        # twm.stop_socket(book_socket)
-        # twmRestart()
         ws.close()
         handling_book = False
         task_update = True
-        #generateCryptoList()
         return
     elif long['profit'] is None:
         handling_book = False
@@ -173,47 +162,26 @@ def handle_socket_message(ws, msg):
     global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
     long = utils.load('long')
     if long is not None:
-        if long['profit'] is not None:
+        if long['purchase_price'] is not None:
             ws.close()
             closed_connections += 1
             if(closed_connections == len(cryptoList)):
-                log.debug(f"Opening websocket for {long}")
+                log.debug(f"Opening websocket for {long['pair']}")
                 task_update = True
         return
     msg = json.loads(msg)
-    #print(msg)
-    #regex = r"(\w+)@"
-    #pair = re.search(regex, msg['stream'])[1].upper()
     pair = msg['data']['s']
-    if cryptoList[pair]['dataFrame'] is None and cryptoList[pair]['calculated']:
-        cryptoList[pair]['calculated'] = False
-        cryptoList[pair]['dataFrame'] = getDataFrame(pair)
-        #log.debug(cryptoList[pair]['dataFrame'])
-        cryptoList[pair]['dataFrame'].set_index('Date', inplace=True)
-        #log.debug(f"Calculated RSI for {pair}")
-        cryptoList[pair]['calculated'] = True
-    kline = msg['data']['k']
-    index = kline['t']
-    row = [[index,kline['o'],kline['h'],kline['l'],kline['c'],0,0,0,0,0,0,0]]
-    newDF = pd.DataFrame(row, columns=utils.CANDLES_NAMES)
-    newDF = utils.candleStringsToNumbers(newDF)
-    newDF.set_index('Date', inplace=True)
-    if index in cryptoList[pair]['dataFrame'].index:
-        cryptoList[pair]['dataFrame'].loc[index] = newDF.loc[index]
-    else:
-        cryptoList[pair]['dataFrame'] = cryptoList[pair]['dataFrame'].append(newDF)
-        cryptoList[pair]['dataFrame'] = cryptoList[pair]['dataFrame'].drop(cryptoList[pair]['dataFrame'].index[0])
-    if cryptoList[pair]['calculated']:
-        cryptoList[pair]['calculated'] = False
-        #utils.calculateRSI(cryptoList[pair]['dataFrame'])
-        strategies.dc_aroon(cryptoList[pair],pair,client)
-        cryptoList[pair]['calculated'] = True
-        #log.debug(f"{cryptoList[pair]['dataFrame']['rsi'].iloc[-1]},{index}")
+    if not cryptoList[pair]['calculated']:
+        return
+    cryptoList[pair]['calculated'] = False
+    cryptoList[pair]['dataFrame'] = update_kline(cryptoList[pair]['dataFrame'],pair,msg)
+    strategies.dc_aroon(cryptoList[pair],pair,client)
+    cryptoList[pair]['calculated'] = True
 
 handling_long = False
 long_dataframe = None
 def handle_long_message(ws, msg):
-    global handling_long,client,task_update,stop_levels,stop_loss,next_stop
+    global handling_long,client,task_update,stop_levels,stop_loss,next_stop,long_dataframe
     if handling_long:
         return
     handling_long = True
@@ -226,20 +194,7 @@ def handle_long_message(ws, msg):
         return
     msg = json.loads(msg)
     pair = msg['data']['s']
-    if long_dataframe is None:
-        long_dataframe = getDataFrame(pair)
-        long_dataframe.set_index('Date', inplace=True)
-    kline = msg['data']['k']
-    index = kline['t']
-    row = [[index,kline['o'],kline['h'],kline['l'],kline['c'],0,0,0,0,0,0,0]]
-    newDF = pd.DataFrame(row, columns=utils.CANDLES_NAMES)
-    newDF = utils.candleStringsToNumbers(newDF)
-    newDF.set_index('Date', inplace=True)
-    if index in long_dataframe.index:
-        long_dataframe.loc[index] = newDF.loc[index]
-    else:
-        long_dataframe = long_dataframe.append(newDF)
-        long_dataframe = long_dataframe.drop(long_dataframe.index[0])
+    long_dataframe = update_kline(long_dataframe,pair,msg)
     last_price = long_dataframe['Close'].iloc[-1]
     if last_price > next_stop:
         stop_loss += stop_levels
@@ -263,13 +218,6 @@ def checkOcoOrder():
         if order['status'] == "FILLED":
             utils.remove('oco')
     
-# def twmRestart():
-#     global twm,api_key,api_secret
-#     twm.stop()
-#     twm = None
-#     time.sleep(1)
-#     twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
-#     twm.start()
 def open_book_socket(pair_book):
     ws_book = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
                                 on_message = handle_book_message,
@@ -312,30 +260,10 @@ async def check_task():
         wst_long.start()
 
 if __name__ == "__main__":
-    #twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
-    #twm.start_kline_socket(callback=handle_socket_message, symbol=symbol)
-    #twm.start()
-    #log.debug(twm)
-    # while True:
-    #     log.debug('Starting loop')
-    #     longDB = utils.load('long')
-    #     if longDB is None:
-    #         generateCryptoList()
-    #     else:
-    #         pair_book = longDB['pair'].lower()
-    #         wss = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
-    #                             on_message = handle_book_message,
-    #                             on_error = websocket_error)
-
-    #         wss.run_forever()
-    #     log.debug('Ending loop')
-        #book_socket = twm.start_symbol_book_ticker_socket(callback=handle_book_message,symbol=longDB['pair'])
-    #if os.environ.get('TORNADO_ENABLED') == 'f':
     app = make_app()
     port = 8888
     app.listen(port)
     log.info(f"Tornado listening on http://localhost:{port}")
-    #clen = len(investing.CRYPTO)*2
     tsks = ioloop.PeriodicCallback(check_task, 1)
     tsks.start() 
     # updateDB = ioloop.PeriodicCallback(update_database, 5)

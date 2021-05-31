@@ -50,6 +50,7 @@ def dc_aroon(crypto_data,pair,client):
                     long(pair,df,client,dc_low.iloc[-1],sl_levels)
 
 def long(pair, dataFrame, client, stop_loss, stop_levels):
+    log.debug("LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:{stop_levels}")
     if utils.load('long') is not None:
         return
     utils.save('long',
