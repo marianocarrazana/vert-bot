@@ -52,7 +52,7 @@ def dc_aroon(crypto_data,pair,client):
                     long(pair,df,client,dc_low.iloc[-1],sl_levels)
 
 def long(pair, dataFrame, client, stop_loss, stop_levels):
-    log.debug("LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:{stop_levels}")
+    log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:{stop_levels}")
     if utils.load('long') is not None:
         return
     utils.save('long',
@@ -60,10 +60,13 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
     symbol_info = utils.getSymbolInfo(pair,client)
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])
     price_filter = float(symbol_info['filters_dic']['PRICE_FILTER']['tickSize'])
+    log.debug(f"min:{minimum},price_filter:{price_filter}")
     #utils.calculateBB(dataFrame)
     row = dataFrame.iloc[-1]
+    print(row)
     price = float(row['Close'])
     price = D.from_float(price).quantize(D(str(price_filter)))
+    log.debug(str(price))
     #diff = row['bb_ma'] - row['bb_l']
     #print('diff:',diff,'price:',row['Close'],'bb_l',row['bb_l'],'bb_h',row['bb_h'])
     #profit = row['Close'] + diff
