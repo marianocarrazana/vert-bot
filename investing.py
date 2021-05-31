@@ -12,12 +12,12 @@ if os.environ.get('BINANCE_TESTING') == 'True':
 else:
     CRYPTO = [
         {'binance_id': 'BNBUSDT', 'investing_id': 1036977},
-        {'binance_id': 'BNBDOWNUSDT', 'investing_id': 1036977},
+        #{'binance_id': 'BNBDOWNUSDT', 'investing_id': 1036977},
         {'binance_id': 'XRPUSDT', 'investing_id': 1075586},
-        {'binance_id': 'BTCUSDT', 'investing_id': 1035793},
+        #{'binance_id': 'BTCUSDT', 'investing_id': 1035793},
         {'binance_id': 'BTCDOWNUSDT', 'investing_id': 1035793},
         {'binance_id': 'ADAUSDT', 'investing_id': 1073899},
-        {'binance_id': 'ADADOWNUSDT', 'investing_id': 1073899},
+        #{'binance_id': 'ADADOWNUSDT', 'investing_id': 1073899},
         {'binance_id': 'ETHUSDT', 'investing_id': 1035794},
         {'binance_id': 'UNIUSDT', 'investing_id': 1167226},
         {'binance_id': 'DOGEUSDT', 'investing_id': 1158819},

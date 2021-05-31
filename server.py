@@ -3,6 +3,7 @@ from tornado import web
 from tornado import template
 import threading
 import pandas as pd 
+import ta
 import investing
 import os,json,re,time
 from binance import Client, ThreadedWebsocketManager
@@ -24,6 +25,9 @@ multiplex_socket = None
 book_socket = None
 task_update = True
 closed_connections = 0
+stop_loss = 0.0
+stop_levels = 0.0
+next_stop = 0.0
 
 def minutes(m): return m*1000*60
         
@@ -40,7 +44,7 @@ def make_app():
     ])
 
 def getDataFrame(pair):
-    bars = client.get_klines(symbol=pair.upper(), interval=Client.KLINE_INTERVAL_5MINUTE, limit=250)
+    bars = client.get_klines(symbol=pair.upper(), interval=Client.KLINE_INTERVAL_1MINUTE, limit=220)
     dt = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
     return utils.candleStringsToNumbers(dt)
 
@@ -57,7 +61,7 @@ def getDataFrame(pair):
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@kline_5m'
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@kline_1m'
     ws_klines[index] = websocket.WebSocketApp(stream_url,
                               on_message = handle_socket_message,
                               on_error = websocket_error)
@@ -98,8 +102,31 @@ def websocket_error(w,e):
     w.close()
     time.sleep(60*60)
 
+def sell_long(long,price):
+    purchase = long['purchase_price']
+    state = "Profit" if price > purchase else 'Loss'
+    diff = utils.get_change(price, purchase)
+    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff}%")
+    try:
+        order = client.order_market_sell(
+            symbol=long['pair'],
+            quantity=long['qty'])
+    except BinanceAPIException as e:
+        log.error(e)
+        return utils.remove('long')
+    except BinanceOrderException as e:
+        log.error(e)
+        return utils.remove('long')
+    log.info(f"Sell long order:{order}")
+    while True:
+        log.debug(f"order_buy:{order['status']}")
+        if order['status'] == 'FILLED':
+            utils.remove('long')
+            break
+        time.sleep(2)
+        order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
+
 handling_book = False
-#utils.save('long',{'pair':'XRPUSDT','profit':2,'stop_loss':1,'qty':'1'})
 transactions = {'bids':[],'asks':[],'increasing':False}
 def handle_book_message(ws, msg):
     global handling_book,book_socket,transactions,client,task_update
@@ -130,45 +157,9 @@ def handle_book_message(ws, msg):
         transactions['increasing'] = transactions['bids'][0] < transactions['bids'][299]
         #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
         if bid > long['profit'] and not transactions['increasing']:
-            utils.telegramMsg(f"<b>Profit</b>\nBid:{bid}\nExpected:{long['profit']}")
-            try:
-                order = client.order_market_sell(
-                    symbol=long['pair'],
-                    quantity=long['qty'])
-            except BinanceAPIException as e:
-                log.error(e)
-                return utils.remove('long')
-            except BinanceOrderException as e:
-                log.error(e)
-                return utils.remove('long')
-            log.info(f"profit:{order}")
-            while True:
-                log.debug(f"order_buy:{order['status']}")
-                if order['status'] == 'FILLED':
-                    utils.remove('long')
-                    break
-                time.sleep(2)
-                order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
+            sell_long(long,bid)
         elif bid <= long['stop_loss']:
-            utils.telegramMsg(f"<b>Stop Loss</b>\nBid:{bid}\nExpected:{long['stop_loss']}")
-            try:
-                order = client.order_market_sell(
-                    symbol=long['pair'],
-                    quantity=long['qty'])
-            except BinanceAPIException as e:
-                log.error(e)
-                return utils.remove('long')
-            except BinanceOrderException as e:
-                log.error(e)
-                return utils.remove('long')
-            log.info(f"stop_loss:{order}")
-            while True:
-                log.debug(f"order_buy:{order['status']}")
-                if order['status'] == 'FILLED':
-                    utils.remove('long')
-                    break
-                time.sleep(2)
-                order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
+            sell_long(long,bid)
     # transactions['asks'].append(ask)
     # if len(transactions['asks']) > 200:
     #     transactions['asks'].pop(0)
@@ -191,8 +182,9 @@ def handle_socket_message(ws, msg):
         return
     msg = json.loads(msg)
     #print(msg)
-    regex = r"(\w+)@"
-    pair = re.search(regex, msg['stream'])[1].upper()
+    #regex = r"(\w+)@"
+    #pair = re.search(regex, msg['stream'])[1].upper()
+    pair = msg['data']['s']
     if cryptoList[pair]['dataFrame'] is None and cryptoList[pair]['calculated']:
         cryptoList[pair]['calculated'] = False
         cryptoList[pair]['dataFrame'] = getDataFrame(pair)
@@ -213,11 +205,54 @@ def handle_socket_message(ws, msg):
         cryptoList[pair]['dataFrame'] = cryptoList[pair]['dataFrame'].drop(cryptoList[pair]['dataFrame'].index[0])
     if cryptoList[pair]['calculated']:
         cryptoList[pair]['calculated'] = False
-        utils.calculateRSI(cryptoList[pair]['dataFrame'])
-        strategies.RSI(cryptoList[pair]['dataFrame'],cryptoList[pair]['investingId'],pair,client)
+        #utils.calculateRSI(cryptoList[pair]['dataFrame'])
+        strategies.dc_aroon(cryptoList[pair],pair,client)
         cryptoList[pair]['calculated'] = True
         #log.debug(f"{cryptoList[pair]['dataFrame']['rsi'].iloc[-1]},{index}")
-    
+
+handling_long = False
+long_dataframe = None
+def handle_long_message(ws, msg):
+    global handling_long,client,task_update,stop_levels,stop_loss,next_stop
+    if handling_long:
+        return
+    handling_long = True
+    long = utils.load('long')
+    if long is None:
+        log.info('out long')
+        ws.close()
+        handling_long = False
+        task_update = True
+        return
+    msg = json.loads(msg)
+    pair = msg['data']['s']
+    if long_dataframe is None:
+        long_dataframe = getDataFrame(pair)
+        long_dataframe.set_index('Date', inplace=True)
+    kline = msg['data']['k']
+    index = kline['t']
+    row = [[index,kline['o'],kline['h'],kline['l'],kline['c'],0,0,0,0,0,0,0]]
+    newDF = pd.DataFrame(row, columns=utils.CANDLES_NAMES)
+    newDF = utils.candleStringsToNumbers(newDF)
+    newDF.set_index('Date', inplace=True)
+    if index in long_dataframe.index:
+        long_dataframe.loc[index] = newDF.loc[index]
+    else:
+        long_dataframe = long_dataframe.append(newDF)
+        long_dataframe = long_dataframe.drop(long_dataframe.index[0])
+    last_price = long_dataframe['Close'].iloc[-1]
+    if last_price > next_stop:
+        stop_loss += stop_levels
+        next_stop += stop_levels 
+    if last_price < stop_loss:
+        sell_long(long,last_price)
+        return
+    a_up = ta.trend.aroon_up(long_dataframe['Close'], window=14, fillna=False)
+    if a_up.iloc[-1] > 95:
+        sell_long(long,last_price)
+        return
+    handling_long = False
+
 def checkOcoOrder():
     oco = utils.load('oco')
     if oco is None:
@@ -252,9 +287,8 @@ def update_database():
                 if 'rsi' in cryptoList[key]['dataFrame']:
                     utils.save(f'RSI{key}',cryptoList[key]['dataFrame']['rsi'].iloc[-31:-1].tolist())
 
-
 async def check_task():
-    global task_update
+    global task_update,stop_loss,stop_levels,next_stop,long_dataframe
     if not task_update:
         return
     task_update = False
@@ -264,7 +298,18 @@ async def check_task():
         generateCryptoList()
     else:
         log.debug('Selling crypto...')
-        open_book_socket(longDB['pair'].lower())
+        #open_book_socket(longDB['pair'].lower())
+        stop_loss = longDB['stop_loss']
+        stop_levels = longDB['stop_levels']
+        next_stop = stop_loss + (stop_levels * 2)
+        long_dataframe = None
+        stream_url = 'wss://stream.binance.com:9443/stream?streams=' + longDB['pair'].lower() + '@kline_1m'
+        ws_long = websocket.WebSocketApp(stream_url,
+                                on_message = handle_long_message,
+                                on_error = websocket_error)
+        wst_long = threading.Thread(target=ws_long.run_forever)
+        wst_long.daemon = True
+        wst_long.start()
 
 if __name__ == "__main__":
     #twm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)

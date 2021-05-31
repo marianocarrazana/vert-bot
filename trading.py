@@ -96,7 +96,7 @@ def finder():
 		if m == "BNBUSDT":
 			continue
 		checkMarket(m)
-		time.sleep(1)
+		sleep(1)
 		logging.debug("Threads:"+str(threading.activeCount()))
 
 def seller(symbol):

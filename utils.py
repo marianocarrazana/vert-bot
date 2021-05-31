@@ -85,3 +85,11 @@ def getSymbolInfo(pair,client):
     for filters in symbol_info['filters']:
         symbol_info['filters_dic'][filters['filterType']] = filters
     return symbol_info
+
+def get_change(current, previous):
+    if current == previous:
+        return 0
+    try:
+        return (abs(current - previous) / previous) * 100.0
+    except ZeroDivisionError:
+        return float('inf')
