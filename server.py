@@ -98,7 +98,7 @@ def sell_long(long,price):
     purchase = long['purchase_price']
     state = "Profit" if price > purchase else 'Loss'
     diff = utils.get_change(price, purchase)
-    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff}%")
+    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
     try:
         order = client.order_market_sell(
             symbol=long['pair'],
@@ -205,7 +205,7 @@ def handle_long_message(ws, msg):
         sell_long(long,last_price)
         handling_long = False
         return
-    a_up = ta.trend.aroon_up(long_dataframe['Close'], window=14, fillna=False)
+    a_up = ta.trend.aroon_up(long_dataframe['Close'], window=21, fillna=False)
     if a_up.iloc[-1] > 95:
         sell_long(long,last_price)
         handling_long = False

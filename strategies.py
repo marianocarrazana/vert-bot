@@ -34,7 +34,7 @@ def dc_aroon(crypto_data,pair,client):
         return
     if df['Close'].iloc[-1] < df['Open'].iloc[-1]:#red stick
         return
-    period = 14
+    period = 21
     dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
     if dc_low.iloc[-3] == df['Low'].iloc[-3]:#donchian channel touch the low of a stick
