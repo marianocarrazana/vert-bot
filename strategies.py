@@ -30,20 +30,20 @@ def RSI(dataFrame, investing_id, pair, client):
 
 def dc_aroon(crypto_data,pair,client):
     df = crypto_data['dataFrame']
-    if utils.get_change(df['Close'].iloc[-3], df['Open'].iloc[-3]) < 0.04:
-        return
     if utils.get_change(df['Close'].iloc[-2], df['Open'].iloc[-2]) < 0.04:
         return
     if utils.get_change(df['Close'].iloc[-1], df['Open'].iloc[-1]) < 0.02:
         return
+    if df['Low'].iloc[-2] > df['Low'].iloc[-1]:
+        return
     period = 14
     dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
-    if dc_low.iloc[-4] == df['Low'].iloc[-4]:#donchian channel touch the low of a stick
+    if dc_low.iloc[-3] == df['Low'].iloc[-3]:#donchian channel touch the low of a stick
         dc_mid = ta.volatility.donchian_channel_mband(
             df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         difference = dc_mid.iloc[-1] - dc_low.iloc[-1]#diff between dc mid and low band
-        maximum = dc_low.iloc[-1] + (difference * 0.65)
+        maximum = dc_low.iloc[-1] + (difference * 0.51)
         if df['Close'].iloc[-1] < maximum:
             aroon = ta.trend.AroonIndicator(
                 close = df['Close'], window = period, fillna = False)
