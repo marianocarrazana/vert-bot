@@ -205,7 +205,8 @@ def handle_long_message(ws, msg):
         sell_long(long,last_price)
         handling_long = False
         return
-    a_up = ta.trend.aroon_up(long_dataframe['Close'], window=21, fillna=False)
+    period = 14
+    a_up = ta.trend.aroon_up(long_dataframe['Close'], window=period, fillna=False)
     if a_up.iloc[-1] > 95:
         sell_long(long,last_price)
         handling_long = False
