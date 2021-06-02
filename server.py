@@ -13,6 +13,7 @@ import utils,strategies
 from logger import log
 import websocket
 import web_handlers
+import vars
 
 #Global Variables
 api_key = os.environ.get('BINANCE_API')
@@ -246,6 +247,7 @@ async def check_task():
         return
     task_update = False
     longDB = utils.load('long')
+    vars.buying = False
     if longDB is None:
         log.debug('Examining market...')
         generateCryptoList()

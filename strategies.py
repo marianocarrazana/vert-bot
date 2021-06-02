@@ -10,6 +10,7 @@ from decimal import Decimal as D#, ROUND_DOWN, ROUND_UP
 #import decimal
 from logger import log
 from random import random
+import vars
 
 def RSI(dataFrame, investing_id, pair, client):
     last = dataFrame["rsi"].iloc[-1]
@@ -53,13 +54,15 @@ def dc_aroon(crypto_data,pair,client):
             #     aroon_up = aroon.aroon_up()
             #     if aroon_up.iloc[-1] < 20:
             sl_levels = None # difference / 2
-            time.sleep(random())#avoid cross buys
             long(pair,df,client,df['Low'].iloc[-2],sl_levels)
 
 def long(pair, dataFrame, client, stop_loss, stop_levels):
+    if vars.buying:
+        return
     log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:{stop_levels}")
     if utils.load('long') is not None:
         return
+    vars.buying = True
     utils.save('long',
         {'pair':pair,'stop_loss':stop_loss,'qty':'0','profit':None,'purchase_price':None})
     symbol_info = utils.getSymbolInfo(pair,client)
