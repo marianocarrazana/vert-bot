@@ -103,7 +103,7 @@ def sell_long(long,price):
     if state == 'Profit':
         stats.wins +=1
     else:
-        state.losses += 1
+        stats.losses += 1
     utils.save('stats',stats)
     diff = utils.get_change(price, purchase)
     utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
