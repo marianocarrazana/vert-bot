@@ -97,6 +97,7 @@ def websocket_error(w,e):
     log.info("Closing connection")
 
 def sell_long(long,price):
+    global client
     purchase = long['purchase_price']
     state = "Profit" if price > purchase else 'Loss'
     stats = utils.load('stats')
@@ -108,9 +109,12 @@ def sell_long(long,price):
     diff = utils.get_change(price, purchase)
     utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
     try:
+        log.debug('Selling...')
+        log.debug(str(long))
         order = client.order_market_sell(
             symbol=long['pair'],
             quantity=long['qty'])
+        log.debug('Order created')
     except BinanceAPIException as e:
         log.error(e)
         utils.remove('long')
