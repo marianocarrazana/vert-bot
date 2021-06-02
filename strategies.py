@@ -4,7 +4,7 @@ import time
 import os
 import ta
 #from binance.enums import TIME_IN_FORCE_GTC,SIDE_SELL
-#from binance.helpers import round_step_size
+from binance.helpers import round_step_size
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from decimal import Decimal as D#, ROUND_DOWN, ROUND_UP
 #import decimal
@@ -67,6 +67,7 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
         {'pair':pair,'stop_loss':stop_loss,'qty':'0','profit':None,'purchase_price':None})
     symbol_info = utils.getSymbolInfo(pair,client)
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])
+    step_size = float(symbol_info['filters_dic']['LOT_SIZE']['stepSize'])
     price_filter = float(symbol_info['filters_dic']['PRICE_FILTER']['tickSize'])
     log.debug(f"min:{minimum},price_filter:{price_filter}")
     #utils.calculateBB(dataFrame)
@@ -85,6 +86,7 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
     amount = balance if balance < max_investment else max_investment
     amount = (amount*0.95) / row['Close']
     amount = D.from_float(amount).quantize(D(str(minimum)))
+    amount = round_step_size(amount, step_size)
     log.debug(f"amount:{amount} minimum:{minimum}")
     if amount < minimum:
         log.warning('Need moar')
