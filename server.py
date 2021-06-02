@@ -70,9 +70,9 @@ def update_kline(df,pair,msg):
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@kline_1m'
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth'
     ws_klines[index] = websocket.WebSocketApp(stream_url,
-                              on_message = handle_socket_message,
+                              on_message = handle_book_depth,
                               on_error = websocket_error)
     wst = threading.Thread(target=ws_klines[index].run_forever)
     wst.daemon = True
@@ -148,6 +148,25 @@ def handle_book_message(ws, msg):
     #print(diff_percent)
     handling_book = False
     
+def handle_book_depth(ws,msg):
+    global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
+    long = utils.load('long')
+    if long is not None:
+        if long['purchase_price'] is not None:
+            ws.close()
+            closed_connections += 1
+            if(closed_connections == len(cryptoList)):
+                log.debug(f"Opening websocket for {long['pair']}")
+                task_update = True
+        return
+    msg = json.loads(msg)
+    pair = msg['data']['s']
+    if not cryptoList[pair]['calculated']:
+        return
+    cryptoList[pair]['calculated'] = False
+    strategies.book_depth(msg['data']['b'],msg['data']['a'],pair)
+    cryptoList[pair]['calculated'] = True
+
 def handle_socket_message(ws, msg):
     global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
     long = utils.load('long')

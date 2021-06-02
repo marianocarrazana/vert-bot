@@ -57,6 +57,17 @@ def dc_aroon(crypto_data,pair,client):
             sl_levels = None # difference / 2
             long(pair,df,client,df['Low'].iloc[-2],sl_levels)
 
+def book_depth(bid,ask,pair):
+    last_bid = float(bid[0][1])
+    last_ask = float(ask[0][1])
+    if last_ask > 0:
+        #print(f"bid:{last_bid},ask:{last_ask}")
+        diff = last_bid/last_ask
+        #print(f"Diff:{diff}")
+        if diff > 10:
+            #utils.telegramMsg(f"Buy wall on {pair}")
+            log.debug(f"Buy wall on {pair}")
+
 def long(pair, dataFrame, client, stop_loss, stop_levels):
     if vars.buying:
         return
