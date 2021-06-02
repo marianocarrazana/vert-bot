@@ -93,7 +93,8 @@ def generateCryptoList():
 def websocket_error(w,e):
     log.error(e)
     w.close()
-    time.sleep(60*60)
+    time.sleep(4)
+    log.info("Closing connection")
 
 def sell_long(long,price):
     purchase = long['purchase_price']
