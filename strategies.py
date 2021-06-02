@@ -103,7 +103,7 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
         log.debug(f"order_buy:{order}")
         if order['status'] == 'FILLED':
             price = float(order['fills'][0]['price'])
-            profit = price * 1.003
+            profit = price * 1.0029
             #stop_loss = price-diff
             log.debug(f"price:{price} stop_loss:{stop_loss}")
             utils.save('long',
