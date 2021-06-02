@@ -1,1 +1,2 @@
 buying = False
+client = None

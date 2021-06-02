@@ -11,6 +11,7 @@ from decimal import Decimal as D#, ROUND_DOWN, ROUND_UP
 from logger import log
 from random import random
 import vars
+import orders
 
 def RSI(dataFrame, investing_id, pair, client):
     last = dataFrame["rsi"].iloc[-1]
@@ -94,31 +95,7 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
         time.sleep(2)
         return
     utils.telegramMsg(f"Buying {amount} of <b>{pair}</b> at {price}")
-    try:
-        order = client.order_market_buy(
-            symbol=pair,
-            quantity=amount)
-    except BinanceAPIException as e:
-        log.info(symbol_info)
-        log.error(e)
-        return utils.remove('long')
-    except BinanceOrderException as e:
-        log.info(symbol_info)
-        log.error(e)
-        return utils.remove('long')
-    while True:
-        log.debug(f"order_buy:{order}")
-        if order['status'] == 'FILLED':
-            price = float(order['fills'][0]['price'])
-            profit = price * 1.0029
-            #stop_loss = price-diff
-            log.debug(f"price:{price} stop_loss:{stop_loss}")
-            utils.save('long',
-                {'pair':pair,'stop_loss':stop_loss,'qty':order['executedQty'],
-                'profit':profit,'purchase_price':price})
-            break
-        time.sleep(0.25)
-        order = client.get_order(symbol=pair,orderId=order['orderId'])
+    orders.market_buy(pair,amount,symbol_info,stop_loss,price)
     # else:
     #     log.debug(f"win_percent: {win_percent}")
     #     utils.remove('long')

@@ -8,12 +8,13 @@ import investing
 import os,json,re,time
 from binance import Client, ThreadedWebsocketManager
 from binance.enums import SIDE_SELL,TIME_IN_FORCE_GTC
-from binance.exceptions import BinanceAPIException, BinanceOrderException
 import utils,strategies
 from logger import log
 import websocket
 import web_handlers
 import vars
+from vars import client
+import orders
 
 #Global Variables
 api_key = os.environ.get('BINANCE_API')
@@ -92,9 +93,7 @@ def generateCryptoList():
 
 def websocket_error(w,e):
     log.error(e)
-    w.close()
-    time.sleep(4)
-    log.info("Closing connection")
+    #w.close()
 
 def sell_long(long,price):
     global client
@@ -108,33 +107,7 @@ def sell_long(long,price):
     utils.save('stats',stats)
     diff = utils.get_change(price, purchase)
     utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
-    try:
-        log.debug('Selling...')
-        log.debug(str(long))
-        order = client.order_market_sell(
-            symbol=long['pair'],
-            quantity=long['qty'])
-        log.debug('Order created')
-    except BinanceAPIException as e:
-        log.error(e)
-        utils.remove('long')
-        return
-    except BinanceOrderException as e:
-        log.error(e)
-        utils.remove('long')
-        return
-    log.info(f"Sell long order:{order}")
-    n = 0
-    while True:
-        n += 1
-        if n == 10:
-            log.error("Long order cant be filled")
-            log.debug(order)
-        if order['status'] == 'FILLED':
-            utils.remove('long')
-            break 
-        time.sleep(2)
-        order = client.get_order(symbol=long['pair'],orderId=order['orderId'])
+    orders.market_sell(long['pair'],long['qty'])
 
 handling_book = False
 transactions = {'bids':[],'asks':[],'increasing':False}
