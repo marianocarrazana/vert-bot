@@ -99,6 +99,12 @@ def websocket_error(w,e):
 def sell_long(long,price):
     purchase = long['purchase_price']
     state = "Profit" if price > purchase else 'Loss'
+    stats = utils.load('stats')
+    if state == 'Profit':
+        stats.wins +=1
+    else:
+        state.losses += 1
+    utils.save('stats',stats)
     diff = utils.get_change(price, purchase)
     utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
     try:
@@ -114,8 +120,12 @@ def sell_long(long,price):
         utils.remove('long')
         return
     log.info(f"Sell long order:{order}")
+    n = 0
     while True:
-        log.debug(f"order_buy:{order['status']}")
+        n += 1
+        if n == 10:
+            log.error("Long order cant be filled")
+            log.debug(order)
         if order['status'] == 'FILLED':
             utils.remove('long')
             break 
@@ -270,6 +280,8 @@ async def check_task():
         # wst_long.start()
 
 if __name__ == "__main__":
+    if utils.load('stats') is None:
+        utils.save('stats',{'wins':0,'losses':0})
     app = make_app()
     port = 8888
     app.listen(port)
