@@ -126,7 +126,6 @@ transactions = {'bids':[],'asks':[],'increasing':False}
 def handle_book_message(ws, msg):
     global handling_book,book_socket,transactions,client,task_update
     if handling_book:
-        log.debug('out')
         return
     handling_book = True
     msg = json.loads(msg)
