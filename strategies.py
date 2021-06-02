@@ -30,9 +30,9 @@ def RSI(dataFrame, investing_id, pair, client):
 
 def dc_aroon(crypto_data,pair,client):
     df = crypto_data['dataFrame']
-    if utils.get_change(df['Close'].iloc[-2], df['Open'].iloc[-2]) < 0.04:
+    if utils.get_change(df['Close'].iloc[-2], df['Open'].iloc[-2]) < 0.02:
         return
-    if utils.get_change(df['Close'].iloc[-1], df['Open'].iloc[-1]) < 0.02:
+    if utils.get_change(df['Close'].iloc[-1], df['Open'].iloc[-1]) < 0.01:
         return
     if df['Low'].iloc[-2] > df['Low'].iloc[-1]:
         return
@@ -42,24 +42,24 @@ def dc_aroon(crypto_data,pair,client):
     if dc_low.iloc[-3] == df['Low'].iloc[-3]:#donchian channel touch the low of a stick
         dc_mid = ta.volatility.donchian_channel_mband(
             df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
-        difference = dc_mid.iloc[-1] - dc_low.iloc[-1]#diff between dc mid and low band
-        maximum = dc_low.iloc[-1] + (difference * 0.51)
+        #difference = dc_mid.iloc[-1] - dc_low.iloc[-1]#diff between dc mid and low band
+        maximum = dc_mid.iloc[-1] #dc_low.iloc[-1] + (difference * 0.51)
         if df['Close'].iloc[-1] < maximum:
-            aroon = ta.trend.AroonIndicator(
-                close = df['Close'], window = period, fillna = False)
-            aroon_down = aroon.aroon_down()
-            if aroon_down.iloc[-1] > 80:
-                aroon_up = aroon.aroon_up()
-                if aroon_up.iloc[-1] < 20:
-                    sl_levels = difference / 2
-                    long(pair,df,client,dc_low.iloc[-1],sl_levels)
+            # aroon = ta.trend.AroonIndicator(
+            #     close = df['Close'], window = period, fillna = False)
+            # aroon_down = aroon.aroon_down()
+            # if aroon_down.iloc[-1] > 80:
+            #     aroon_up = aroon.aroon_up()
+            #     if aroon_up.iloc[-1] < 20:
+            sl_levels = None # difference / 2
+            long(pair,df,client,df['Low'].iloc[-2],sl_levels)
 
 def long(pair, dataFrame, client, stop_loss, stop_levels):
     log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:{stop_levels}")
     if utils.load('long') is not None:
         return
     utils.save('long',
-        {'pair':pair,'stop_loss':stop_loss,'qty':'0','stop_levels':stop_levels,'purchase_price':None})
+        {'pair':pair,'stop_loss':stop_loss,'qty':'0','profit':None,'purchase_price':None})
     symbol_info = utils.getSymbolInfo(pair,client)
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])
     price_filter = float(symbol_info['filters_dic']['PRICE_FILTER']['tickSize'])
@@ -103,14 +103,14 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
         log.debug(f"order_buy:{order}")
         if order['status'] == 'FILLED':
             price = float(order['fills'][0]['price'])
-            #profit = price+diff
+            profit = price * 1.003
             #stop_loss = price-diff
             log.debug(f"price:{price} stop_loss:{stop_loss}")
             utils.save('long',
                 {'pair':pair,'stop_loss':stop_loss,'qty':order['executedQty'],
-                'stop_levels':stop_levels,'purchase_price':row['Close']})
+                'profit':profit,'purchase_price':price})
             break
-        time.sleep(2)
+        time.sleep(0.25)
         order = client.get_order(symbol=pair,orderId=order['orderId'])
     # else:
     #     log.debug(f"win_percent: {win_percent}")

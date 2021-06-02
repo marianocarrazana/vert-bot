@@ -147,7 +147,7 @@ def handle_book_message(ws, msg):
         transactions['bids'].pop(0)
         transactions['increasing'] = transactions['bids'][0] < transactions['bids'][299]
         #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
-        if bid > long['profit'] and not transactions['increasing']:
+        if bid >= long['profit'] and not transactions['increasing']:
             sell_long(long,bid)
         elif bid <= long['stop_loss']:
             sell_long(long,bid)
@@ -254,18 +254,18 @@ async def check_task():
             utils.remove('long')
             return
         log.debug('Selling crypto...')
-        #open_book_socket(longDB['pair'].lower())
-        stop_loss = longDB['stop_loss']
-        stop_levels = longDB['stop_levels']
-        next_stop = stop_loss + (stop_levels * 2)
-        long_dataframe = None
-        stream_url = 'wss://stream.binance.com:9443/stream?streams=' + longDB['pair'].lower() + '@kline_1m'
-        ws_long = websocket.WebSocketApp(stream_url,
-                                on_message = handle_long_message,
-                                on_error = websocket_error)
-        wst_long = threading.Thread(target=ws_long.run_forever)
-        wst_long.daemon = True
-        wst_long.start()
+        open_book_socket(longDB['pair'].lower())
+        # stop_loss = longDB['stop_loss']
+        # stop_levels = longDB['stop_levels']
+        # next_stop = stop_loss + (stop_levels * 2)
+        # long_dataframe = None
+        # stream_url = 'wss://stream.binance.com:9443/stream?streams=' + longDB['pair'].lower() + '@kline_1m'
+        # ws_long = websocket.WebSocketApp(stream_url,
+        #                         on_message = handle_long_message,
+        #                         on_error = websocket_error)
+        # wst_long = threading.Thread(target=ws_long.run_forever)
+        # wst_long.daemon = True
+        # wst_long.start()
 
 if __name__ == "__main__":
     app = make_app()
