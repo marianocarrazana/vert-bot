@@ -70,7 +70,7 @@ def update_kline(df,pair,msg):
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth'
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth5@100ms'
     ws_klines[index] = websocket.WebSocketApp(stream_url,
                               on_message = handle_book_depth,
                               on_error = websocket_error)
@@ -160,11 +160,12 @@ def handle_book_depth(ws,msg):
                 task_update = True
         return
     msg = json.loads(msg)
-    pair = msg['data']['s']
+    regex = r"(\w+)@"
+    pair = re.search(regex, msg['stream'])[1].upper()
     if not cryptoList[pair]['calculated']:
         return
     cryptoList[pair]['calculated'] = False
-    strategies.book_depth(msg['data']['b'],msg['data']['a'],pair)
+    strategies.book_depth(msg['data']['bids'],msg['data']['asks'],pair)
     cryptoList[pair]['calculated'] = True
 
 def handle_socket_message(ws, msg):
