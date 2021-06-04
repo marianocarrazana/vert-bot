@@ -70,7 +70,7 @@ def update_kline(df,pair,msg):
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth5@100ms'
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth20@100ms'
     ws_klines[index] = websocket.WebSocketApp(stream_url,
                               on_message = handle_book_depth,
                               on_error = websocket_error)
