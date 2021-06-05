@@ -15,7 +15,7 @@ else:
         #{'binance_id': 'BNBDOWNUSDT', 'investing_id': 1036977},
         {'binance_id': 'XRPUSDT', 'investing_id': 1075586},
         #{'binance_id': 'BTCUSDT', 'investing_id': 1035793},
-        #{'binance_id': 'BTCDOWNUSDT', 'investing_id': 1035793},
+        {'binance_id': 'BTCDOWNUSDT', 'investing_id': 1035793},
         {'binance_id': 'ADAUSDT', 'investing_id': 1073899},
         #{'binance_id': 'ADADOWNUSDT', 'investing_id': 1073899},
         {'binance_id': 'ETHUSDT', 'investing_id': 1035794},
@@ -29,7 +29,7 @@ else:
         {'binance_id': 'DOTUSDT', 'investing_id': 1169564},
         {'binance_id': 'VETUSDT', 'investing_id': 1089757},
         {'binance_id': 'ALGOUSDT', 'investing_id': 1142193},
-        #{'binance_id': 'MATICUSDT', 'investing_id': 1131278}
+        {'binance_id': 'MATICUSDT', 'investing_id': 1131278}
     ]
 
 INTERVALS = {

@@ -17,9 +17,6 @@ from vars import client
 import orders
 
 #Global Variables
-api_key = os.environ.get('BINANCE_API')
-api_secret = os.environ.get('BINANCE_SECRET')
-client = Client(api_key, api_secret)
 if os.environ.get('BINANCE_TESTING') == 'True':
     client.API_URL = 'https://testnet.binance.vision/api'
 cryptoList = None

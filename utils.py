@@ -4,6 +4,7 @@ import requests
 import urllib.parse
 from tinydb import TinyDB, Query
 from logger import log
+from vars import client
 
 CANDLES_NAMES = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'closetime',
                  'quoteasset', 'numbertrades', 'takerbaseasset', 'takerquoteasset', 'ignore']
@@ -79,7 +80,7 @@ def remove(varName):
     global db,query
     db.remove(query.name == varName)
     
-def getSymbolInfo(pair,client):
+def getSymbolInfo(pair):
     symbol_info = client.get_symbol_info(pair)
     symbol_info['filters_dic'] = {}
     for filters in symbol_info['filters']:

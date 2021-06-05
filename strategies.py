@@ -10,6 +10,7 @@ from decimal import Decimal as D#, ROUND_DOWN, ROUND_UP
 #import decimal
 from logger import log
 from random import random
+from vars import client
 import vars
 import orders
 
@@ -57,51 +58,55 @@ def dc_aroon(crypto_data,pair,client):
             sl_levels = None # difference / 2
             long(pair,df,client,df['Low'].iloc[-2],sl_levels)
 
-def book_depth(bid,ask,pair):
-    if len(bid) != 20 or len(ask) != 20:
+def book_depth(bid_list,ask_list,pair):
+    if len(bid_list) != 20 or len(ask_list) != 20:
         return
-    bid_total = 0.0
     bid_max = 0.0
     bid_max_index = 0
-    bid_index = 0
-    for b in bid:
-        bid = float(b[1])
-        bid_total += bid
-        if bid > bid_max:
-            bid_max = bid
-            bid_max_index = bid_index
-        bid_index += 1
-    ask_total = 0.0
-    for a in ask:
-        ask_total += float(a[1])
-    #print(bid_total/ask_total)
-    if ask_total > 0.0:
-        #print(f"bid:{last_bid},ask:{last_ask}")
-        diff = bid_total/ask_total
-        #print(f"Diff:{diff}")
-        if diff > 300:
-            #utils.telegramMsg(f"Buy wall on {pair}")
-            log.debug(f"Buy wall on {pair} at {bid[bid_index][0]}")
+    ratios = []
+    for i in range(5):
+        bid_total = 0.0
+        ask_total = 0.0
+        for e in range(4):
+            n = i * 4 + e
+            bid = float(bid_list[n][1])
+            ask_total += float(ask_list[n][1])
+            bid_total += bid
+            if bid > bid_max:
+                bid_max = bid
+                bid_max_index = n
+        if ask_total > 0.0:
+            diff = bid_total/ask_total
+            ratios.append(round(diff))
+            if diff < 15.0:
+                return
+    if max(ratios) > 400:
+        #utils.telegramMsg(f"Buy wall on {pair}")
+        log.debug(f"Buy wall on {pair} at {bid_list[bid_max_index][0]}, diff:{ratios}")
+        price = float(ask_list[n][0])
+        sl = price - (price * 0.003)
+        long(pair, None, vars.client, sl, price)
 
-def long(pair, dataFrame, client, stop_loss, stop_levels):
+def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
         return
-    log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:{stop_levels}")
+    log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:0")
     if utils.load('long') is not None:
         return
     vars.buying = True
     utils.save('long',
         {'pair':pair,'stop_loss':stop_loss,'qty':'0','profit':None,'purchase_price':None})
-    symbol_info = utils.getSymbolInfo(pair,client)
+    symbol_info = utils.getSymbolInfo(pair)
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])
     step_size = float(symbol_info['filters_dic']['LOT_SIZE']['stepSize'])
     price_filter = float(symbol_info['filters_dic']['PRICE_FILTER']['tickSize'])
     log.debug(f"min:{minimum},price_filter:{price_filter}")
     #utils.calculateBB(dataFrame)
-    row = dataFrame.iloc[-1]
-    print(row)
-    price = float(row['Close'])
-    price = D.from_float(price).quantize(D(str(price_filter)))
+    if dataFrame is not None:
+        row = dataFrame.iloc[-1]
+        print(row)
+        price_f = float(row['Close'])
+    price = D.from_float(price_f).quantize(D(str(price_filter)))
     log.debug(str(price))
     #diff = row['bb_ma'] - row['bb_l']
     #print('diff:',diff,'price:',row['Close'],'bb_l',row['bb_l'],'bb_h',row['bb_h'])
@@ -111,7 +116,7 @@ def long(pair, dataFrame, client, stop_loss, stop_levels):
     balance = float(client.get_asset_balance(asset='USDT')['free'])
     max_investment = float(os.environ.get('MAX_INVESTMENT') or 20)
     amount = balance if balance < max_investment else max_investment
-    amount = (amount*0.95) / row['Close']
+    amount = (amount*0.95) / price_f
     amount = D.from_float(amount).quantize(D(str(minimum)))
     amount = round_step_size(amount, step_size)
     log.debug(f"amount:{amount} minimum:{minimum}")
