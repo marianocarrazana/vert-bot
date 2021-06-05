@@ -66,11 +66,11 @@ def book_depth(bid_list,ask_list,pair):
     ratios = []
     bid_total = 0.0
     ask_total = 0.0
-    for i in range(6):
+    for i in range(10):
         bids = 0.0
         asks = 0.0
-        for e in range(3):
-            n = i * 3 + e
+        for e in range(2):
+            n = i * 2 + e
             bid = float(bid_list[n][1])
             asks += float(ask_list[n][1])
             bids += bid
@@ -81,14 +81,14 @@ def book_depth(bid_list,ask_list,pair):
             diff = bids/asks
             ratios.append(round(diff))
             min_diff = 1.0
-            if i == 0:
-                min_diff = 50
             if diff < min_diff:
                 return
+        else:
+            return
         bid_total += bids
         ask_total += asks
     total_ratio = bid_total/ask_total
-    if total_ratio > 50:
+    if total_ratio > 10:
         #utils.telegramMsg(f"Buy wall on {pair}")
         log.debug(f"Buy wall on {pair} at {bid_list[bid_max_index][0]}, diff:{ratios}")
         price = float(ask_list[n][0])
