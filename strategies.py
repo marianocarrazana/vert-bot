@@ -88,8 +88,8 @@ def book_depth(bid_list,ask_list,pair):
         bid_total += bids
         ask_total += asks
     total_ratio = bid_total/ask_total
-    if total_ratio > 10:
-        #utils.telegramMsg(f"Buy wall on {pair}")
+    if total_ratio > 300:
+        utils.telegramMsg(f"Buy wall on {pair}")
         log.debug(f"Buy wall on {pair} at {bid_list[bid_max_index][0]}, diff:{ratios}")
         price = float(ask_list[n][0])
         sl = price - (price * 0.003)
