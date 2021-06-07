@@ -67,7 +67,7 @@ def update_kline(df,pair,msg):
 ws_klines = []
 def open_kline_stream(pair,index):
     global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth20@100ms'
+    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth@1000ms'
     ws_klines[index] = websocket.WebSocketApp(stream_url,
                               on_message = handle_book_depth,
                               on_error = websocket_error)
@@ -76,14 +76,25 @@ def open_kline_stream(pair,index):
     wst.start()
 
 def generateCryptoList():
-    global cryptoList,book_socket,multiplex_socket,ws_klines,closed_connections
-    cryptoList= {}
+    global book_socket,multiplex_socket,ws_klines,closed_connections
+    vars.crypto_list= {}
     closed_connections = 0
     ws_klines = []
     i = 0
     for cr in investing.CRYPTO:
         ws_klines.append(None)
-        cryptoList[cr['binance_id']] = {'dataFrame':None,'calculated':True,'investingId':cr['investing_id']}
+        book = client.get_order_book(symbol=cr['binance_id'],limit=100)
+        ask_df = pd.DataFrame(
+            book['bids'], columns=['price','qty'])
+        ask_df = ask_df.astype({'price': float,'qty': float})
+        ask_df.set_index('price',inplace = True)
+        bid_df = pd.DataFrame(
+            book['asks'], columns=['price','qty'])
+        bid_df = bid_df.astype({'price': float,'qty': float})
+        bid_df.set_index('price',inplace = True)
+        vars.crypto_list[cr['binance_id']] = {
+            'dataFrame':None,'bids':bid_df,'asks':ask_df,
+            'calculated':True,'investingId':cr['investing_id'],'price':0.0}
         open_kline_stream(cr['binance_id'],i)
         i += 1
         time.sleep(1)
@@ -146,44 +157,61 @@ def handle_book_message(ws, msg):
     handling_book = False
     
 def handle_book_depth(ws,msg):
-    global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
+    global client,book_socket,multiplex_socket,closed_connections,task_update
     long = utils.load('long')
     if long is not None:
         if long['purchase_price'] is not None:
             ws.close()
             closed_connections += 1
-            if(closed_connections == len(cryptoList)):
-                log.debug(f"Opening websocket for {long['pair']}")
-                task_update = True
-        return
-    msg = json.loads(msg)
-    regex = r"(\w+)@"
-    pair = re.search(regex, msg['stream'])[1].upper()
-    if not cryptoList[pair]['calculated']:
-        return
-    cryptoList[pair]['calculated'] = False
-    strategies.book_depth(msg['data']['bids'],msg['data']['asks'],pair)
-    cryptoList[pair]['calculated'] = True
-
-def handle_socket_message(ws, msg):
-    global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
-    long = utils.load('long')
-    if long is not None:
-        if long['purchase_price'] is not None:
-            ws.close()
-            closed_connections += 1
-            if(closed_connections == len(cryptoList)):
+            if(closed_connections == len(vars.crypto_list)):
                 log.debug(f"Opening websocket for {long['pair']}")
                 task_update = True
         return
     msg = json.loads(msg)
     pair = msg['data']['s']
-    if not cryptoList[pair]['calculated']:
+    ask_df = pd.DataFrame(
+            msg['data']['b'], columns=['price','qty'])
+    ask_df = ask_df.astype({'price': float,'qty': float})
+    ask_df.set_index('price',inplace = True)
+    bid_df = pd.DataFrame(
+            msg['data']['a'], columns=['price','qty'])
+    bid_df = bid_df.astype({'price': float,'qty': float})
+    bid_df.set_index('price',inplace = True)
+    vars.crypto_list[pair]['bids'] = bid_df.combine_first(vars.crypto_list[pair]['bids'])
+    vars.crypto_list[pair]['bids'].sort_index(inplace=True)
+    vars.crypto_list[pair]['asks'] = ask_df.combine_first(vars.crypto_list[pair]['asks'])
+    vars.crypto_list[pair]['asks'].sort_index(inplace=True)
+    min_ask = float(msg['data']['a'][0][0])
+    max_ask = float(min_ask)*1.003
+    max_bid = float(msg['data']['b'][0][0])
+    min_bid = max_bid - (max_bid*0.003)
+    crypto_price = (min_ask + max_bid) / 2
+    vars.crypto_list[pair]['price'] = crypto_price
+    if not vars.crypto_list[pair]['calculated']:
         return
-    cryptoList[pair]['calculated'] = False
-    cryptoList[pair]['dataFrame'] = update_kline(cryptoList[pair]['dataFrame'],pair,msg)
-    strategies.dc_aroon(cryptoList[pair],pair,client)
-    cryptoList[pair]['calculated'] = True
+    vars.crypto_list[pair]['calculated'] = False
+    strategies.book_depth(pair,min_ask,max_ask,min_bid,max_bid)
+    vars.crypto_list[pair]['calculated'] = True
+
+def handle_socket_message(ws, msg):
+    global client,book_socket,multiplex_socket,closed_connections,task_update
+    long = utils.load('long')
+    if long is not None:
+        if long['purchase_price'] is not None:
+            ws.close()
+            closed_connections += 1
+            if(closed_connections == len(vars.crypto_list)):
+                log.debug(f"Opening websocket for {long['pair']}")
+                task_update = True
+        return
+    msg = json.loads(msg)
+    pair = msg['data']['s']
+    if not vars.crypto_list[pair]['calculated']:
+        return
+    vars.crypto_list[pair]['calculated'] = False
+    vars.crypto_list[pair]['dataFrame'] = update_kline(vars.crypto_list[pair]['dataFrame'],pair,msg)
+    strategies.dc_aroon(vars.crypto_list[pair],pair,client)
+    vars.crypto_list[pair]['calculated'] = True
 
 handling_long = False
 long_dataframe = None
@@ -237,13 +265,12 @@ def open_book_socket(pair_book):
     wst.start()
 
 def update_database():
-    global cryptoList
     longDB = utils.load('long')
     if longDB is None:
-        for key in cryptoList:
-            if cryptoList[key]['dataFrame'] is not None:
-                if 'rsi' in cryptoList[key]['dataFrame']:
-                    utils.save(f'RSI{key}',cryptoList[key]['dataFrame']['rsi'].iloc[-31:-1].tolist())
+        for key in vars.crypto_list:
+            if vars.crypto_list[key]['dataFrame'] is not None:
+                if 'rsi' in vars.crypto_list[key]['dataFrame']:
+                    utils.save(f'RSI{key}',vars.crypto_list[key]['dataFrame']['rsi'].iloc[-31:-1].tolist())
 
 async def check_task():
     global task_update,stop_loss,stop_levels,next_stop,long_dataframe

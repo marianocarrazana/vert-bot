@@ -58,42 +58,25 @@ def dc_aroon(crypto_data,pair,client):
             sl_levels = None # difference / 2
             long(pair,df,client,df['Low'].iloc[-2],sl_levels)
 
-def book_depth(bid_list,ask_list,pair):
-    if len(bid_list) != 20 or len(ask_list) != 20:
-        return
-    bid_max = 0.0
-    bid_max_index = 0
-    ratios = []
-    bid_total = 0.0
-    ask_total = 0.0
-    for i in range(10):
-        bids = 0.0
-        asks = 0.0
-        for e in range(2):
-            n = i * 2 + e
-            bid = float(bid_list[n][1])
-            asks += float(ask_list[n][1])
-            bids += bid
-            if bid > bid_max:
-                bid_max = bid
-                bid_max_index = n
-        if asks > 0.0:
-            diff = bids/asks
-            ratios.append(round(diff))
-            min_diff = 1.0
-            if diff < min_diff:
-                return
-        else:
-            return
-        bid_total += bids
-        ask_total += asks
-    total_ratio = bid_total/ask_total
-    if total_ratio > 10:
-        #utils.telegramMsg(f"Buy wall on {pair}")
-        log.debug(f"Buy wall on {pair} at {bid_list[bid_max_index][0]}, diff:{ratios}")
-        price = float(ask_list[n][0])
-        sl = price - (price * 0.003)
-        #long(pair, None, vars.client, sl, price)
+def book_depth(pair,min_ask,max_ask,min_bid,max_bid):
+    price = vars.crypto_list[pair]['price']
+    bid_list = utils.get_pandas_range(
+        vars.crypto_list[pair]['bids'],
+        min_bid,
+        max_bid
+        )
+    bid_total = bid_list['qty'].sum()
+    ask_list = utils.get_pandas_range(
+        vars.crypto_list[pair]['asks'],
+        min_ask,
+        max_ask
+        )
+    ask_total = ask_list['qty'].sum()
+    print(f"Price:{max_bid},{min_ask}")
+    print(f"bids:{len(bid_list)}",f"asks:{len(ask_list)}")
+    print(bid_total,ask_total)
+    if ask_total > 0.0:
+        print('ratio:',bid_total/ask_total)
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:

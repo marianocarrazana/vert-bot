@@ -94,3 +94,8 @@ def get_change(current, previous):
         return ((current - previous) / previous) * 100.0
     except ZeroDivisionError:
         return float('inf')
+
+def get_pandas_range(df,min_,max_):
+    min_index = df.index.get_loc(min_, method ='nearest')
+    max_index = df.index.get_loc(max_, method ='nearest') + 1
+    return df.iloc[min_index:max_index]
