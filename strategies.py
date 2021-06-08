@@ -95,7 +95,7 @@ def book_depth(bid_list,ask_list,pair):
         sl = price - (price * 0.003)
         #long(pair, None, vars.client, sl, price)
 
-best_bet = {}
+best_bet = {'pair':None}
 def examine_market():
     global best_bet
     if best_bet['pair'] is not None:
