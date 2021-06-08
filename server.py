@@ -17,8 +17,8 @@ from vars import client
 import orders
 
 #Global Variables
-if os.environ.get('BINANCE_TESTING') == 'True':
-    client.API_URL = 'https://testnet.binance.vision/api'
+# if os.environ.get('BINANCE_TESTING') == 'True':
+#     client.API_URL = 'https://testnet.binance.vision/api'
 cryptoList = None
 multiplex_socket = None
 book_socket = None
@@ -280,9 +280,9 @@ if __name__ == "__main__":
     port = 8888
     app.listen(port)
     log.info(f"Tornado listening on http://localhost:{port}")
-    tsks = ioloop.PeriodicCallback(check_task, 1)
-    tsks.start() 
-    # updateDB = ioloop.PeriodicCallback(update_database, 5)
-    # updateDB.start() 
-    #ioloop.IOLoop.current().spawn_callback(check_task)
+    # tsks = ioloop.PeriodicCallback(check_task, 1)
+    # tsks.start() 
+    exam_market = ioloop.PeriodicCallback(strategies.examine_market, minutes(60))
+    exam_market.start() 
+    ioloop.IOLoop.current().spawn_callback(strategies.examine_market)
     ioloop.IOLoop.current().start()#run forever
