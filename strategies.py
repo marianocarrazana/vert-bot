@@ -98,7 +98,7 @@ def book_depth(bid_list,ask_list,pair):
 best_bet = {}
 def examine_market():
     global best_bet
-    best_bet = {'pair':None,'ratio':1.0}
+    best_bet = {'pair':None,'ratio':1.0,'price':''}
     for cr in investing.CRYPTO:
         book = vars.client.get_order_book(symbol=cr['binance_id'],limit=1000)
         max_ask = float(book["asks"][0][0]) * 1.02
@@ -122,7 +122,7 @@ def examine_market():
                 bid_list.append([price,qty])
         ratio = total_bid/total_ask
         if ratio > best_bet['ratio']:
-            best_bet = {'pair':cr['binance_id'],'ratio':ratio}
+            best_bet = {'pair':cr['binance_id'],'ratio':ratio,'price':book["asks"][0][0]}
         # print(cr['binance_id'],len(ask_list),len(bid_list),ratio)
         time.sleep(1)
     if best_bet['pair'] is not None:
