@@ -98,6 +98,10 @@ def book_depth(bid_list,ask_list,pair):
 best_bet = {}
 def examine_market():
     global best_bet
+    if best_bet['pair'] is not None:
+        ticker = vars.client.get_orderbook_ticker(symbol=best_bet['pair'])
+        diff = utils.get_change(float(ticker['bidPrice']),float(best_bet['price']))
+        utils.telegramMsg(f"Selling <b>{best_bet['pair']}</b> at {best_bet['price']}\nDifference:{diff:.2f}%")
     best_bet = {'pair':None,'ratio':1.0,'price':''}
     for cr in investing.CRYPTO:
         book = vars.client.get_order_book(symbol=cr['binance_id'],limit=1000)
@@ -126,7 +130,7 @@ def examine_market():
         # print(cr['binance_id'],len(ask_list),len(bid_list),ratio)
         time.sleep(1)
     if best_bet['pair'] is not None:
-        log.debug(f"Best bet:{best_bet}")
+        utils.telegramMsg(f"Buying <b>{best_bet['pair']}</b> at {best_bet['price']}")
         #long(best_bet['pair'])
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
