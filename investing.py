@@ -130,9 +130,9 @@ def getTechnicalData(pair, interval):
     buy = summary['BUY']
     sell = summary['SELL']
     neutral = summary['NEUTRAL']
-    if buy >= 12 and sell <= 2:
+    if buy >= 16 and sell <= 2:
         return "Strong Buy"
-    elif sell >= 12 and buy <= 2:
+    elif sell >= 16 and buy <= 2:
         return "Strong Sell"
     elif buy >= neutral and buy > sell:
         return "Sell"
