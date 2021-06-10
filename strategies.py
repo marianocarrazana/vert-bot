@@ -13,6 +13,7 @@ from random import random
 from vars import client
 import vars
 import orders
+from tradingview_ta import Interval
 
 def RSI(dataFrame, investing_id, pair, client):
     last = dataFrame["rsi"].iloc[-1]
@@ -133,13 +134,10 @@ def examine_market():
         utils.telegramMsg(f"Buying <b>{best_bet['pair']}</b> at {best_bet['price']}")
         #long(best_bet['pair'])
 
-print(investing.INTERVALS['30mins'])
-
 def examine_btc():
-    invest_id = 1035793
     long_data = utils.load('long')
-    data = investing.getTechnicalData(invest_id,'30mins')
-    log.debug(data)
+    data = investing.getTechnicalData('btcusdt',Interval.INTERVAL_15_MINUTES)
+    print(data)
     if data == 'Strong Buy':
         if long_data is None:
             pair = 'BTCUPUSDT'

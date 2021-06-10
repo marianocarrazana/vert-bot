@@ -3,6 +3,7 @@ import requests
 import re
 import time
 import os
+from tradingview_ta import TA_Handler, Exchange
 
 if os.environ.get('BINANCE_TESTING') == 'True':
     CRYPTO = [
@@ -118,32 +119,27 @@ def random_user_agent():
     return random.choice(USER_AGENTS)
 
 
-def getTechnicalData(investing_id, interval):
-    data_values = {
-        'pairID': investing_id,
-        'period': INTERVALS[interval],
-        'viewType': 'normal'
-    }
-
-    headers = {
-        "User-Agent": random_user_agent(),
-        "X-Requested-With": "XMLHttpRequest",
-        "Accept": "text/html",
-        "Accept-Encoding": "gzip, deflate",
-        "Connection": "keep-alive",
-    }
-
-    url = "https://www.investing.com/instruments/Service/GetTechincalData"
-
-    req = requests.post(url, headers=headers, data=data_values)
-
-    # print(req.text)
-    regex = r"summary:<span.+>(.+)</span>"
-
-    matches = re.search(regex, req.text, re.MULTILINE | re.IGNORECASE)
-
-    return matches[1] or 'null'
-
+def getTechnicalData(pair, interval):
+    data = TA_Handler(
+    symbol=pair,
+    screener="crypto",
+    exchange="binance",
+    interval=interval
+    )
+    summary = data.get_analysis().summary
+    buy = summary['BUY']
+    sell = summary['SELL']
+    neutral = summary['NEUTRAL']
+    if buy >= 12 and sell <= 2:
+        return "Strong Buy"
+    elif sell >= 12 and buy <= 2:
+        return "Strong Sell"
+    elif buy >= neutral and buy > sell:
+        return "Sell"
+    elif sell >= neutral and sell > buy:
+        return "Sell"
+    else:
+        return "Neutral"
 
 def getAllTechnicalData():
     interval = [['5mins', 1], ['1hour', 2], [
