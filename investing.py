@@ -4,6 +4,7 @@ import re
 import time
 import os
 from tradingview_ta import TA_Handler, Exchange
+from logger import log
 
 if os.environ.get('BINANCE_TESTING') == 'True':
     CRYPTO = [
@@ -127,6 +128,7 @@ def getTechnicalData(pair, interval):
     interval=interval
     )
     summary = data.get_analysis().summary
+    log.debug(summary)
     buy = summary['BUY']
     sell = summary['SELL']
     neutral = summary['NEUTRAL']

@@ -137,7 +137,6 @@ def examine_market():
 def examine_btc():
     long_data = utils.load('long')
     data = investing.getTechnicalData('btcusdt',Interval.INTERVAL_5_MINUTES)
-    print(data)
     if data == 'Strong Buy':
         if long_data is None:
             pair = 'BTCUPUSDT'
