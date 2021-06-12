@@ -191,7 +191,6 @@ async def check_task():
         orders.open_book_socket(longDB['pair'].lower())
 
 if __name__ == "__main__":
-    check_task()
     if utils.load('stats') is None:
         utils.save('stats',{'wins':0,'losses':0})
     app = make_app()
@@ -203,4 +202,5 @@ if __name__ == "__main__":
     exam_btc = ioloop.PeriodicCallback(strategies.examine_btc, minutes(2))
     exam_btc.start() 
     ioloop.IOLoop.current().spawn_callback(strategies.examine_btc)
+    ioloop.IOLoop.current().spawn_callback(check_task)
     ioloop.IOLoop.current().start()#run forever

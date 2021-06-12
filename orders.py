@@ -77,6 +77,7 @@ def market_sell(pair,qty):
         order = client.get_order(symbol=pair,orderId=order['orderId'])
 
 def open_book_socket(pair_book):
+    log.debug(f'Opening book socket for {pair_book}')
     ws_book = websocket.WebSocketApp(
         f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
         on_message = handle_book_message,
@@ -123,9 +124,9 @@ def handle_book_message(ws, msg):
     #ask = float(msg['a'])
     transactions['bids'].append(bid)
     tr_length = len(transactions['bids'])
-    if tr_length > 300:
+    if tr_length > 5:
         transactions['bids'].pop(0)
-        transactions['increasing'] = transactions['bids'][0] < transactions['bids'][299]
+        transactions['increasing'] = transactions['bids'][0] < transactions['bids'][4]
         #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
         if bid >= long['profit'] and not transactions['increasing']:
             bs = threading.Thread(target=sell_long,args=(long,bid))
