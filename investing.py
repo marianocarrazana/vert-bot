@@ -129,6 +129,9 @@ def getTechnicalData(pair, interval):
     )
     summary = data.get_analysis().summary
     log.debug(summary)
+    recommendation = summary['RECOMMENDATION']
+    if recommendation == 'NEUTRAL':
+        return 'Neutral'
     buy = summary['BUY']
     sell = summary['SELL']
     neutral = summary['NEUTRAL']
@@ -141,7 +144,7 @@ def getTechnicalData(pair, interval):
     elif sell >= neutral and sell > buy:
         return "Sell"
     else:
-        return "Neutral"
+        return 'None'
 
 def getAllTechnicalData():
     interval = [['5mins', 1], ['1hour', 2], [

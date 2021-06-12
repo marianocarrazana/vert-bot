@@ -142,49 +142,43 @@ def examine_btc():
             pair = 'BTCUPUSDT'
             ticker = vars.client.get_orderbook_ticker(symbol=pair)
             price = float(ticker['askPrice'])
-            utils.save('long',
-            {'pair':pair,'stop_loss':0,'qty':'1','profit':None,'purchase_price':price})
-            utils.telegramMsg(f"Buying <b>{pair}</b> at {price}")
+            stop_loss = price - (price*0.009)
+            long(pair,None,None,stop_loss,price)
         else:
             if long_data['pair'] == 'BTCDOWNUSDT':
                 pair = 'BTCDOWNUSDT'
                 ticker = vars.client.get_orderbook_ticker(symbol=pair)
                 price = float(ticker['askPrice'])
-                diff = utils.get_change(price, long_data['purchase_price'])
+                orders.sell_long(long_data,price)
                 utils.remove('long')
-                utils.telegramMsg(f"Selling <b>{pair}</b> at {price}\nDifference:{diff:.2f}%")
     elif data == 'Buy' and long_data is not None:
         if long_data['pair'] == 'BTCDOWNUSDT':
             pair = 'BTCDOWNUSDT'
             ticker = vars.client.get_orderbook_ticker(symbol=pair)
             price = float(ticker['bidPrice'])
-            diff = utils.get_change(price, long_data['purchase_price'])
+            orders.sell_long(long_data,price)
             utils.remove('long')
-            utils.telegramMsg(f"Selling <b>{pair}</b> at {price}\nDifference:{diff:.2f}%")
     elif data == 'Strong Sell':
         if long_data is None:
             pair = 'BTCDOWNUSDT'
             ticker = vars.client.get_orderbook_ticker(symbol=pair)
             price = float(ticker['askPrice'])
-            utils.save('long',
-            {'pair':pair,'stop_loss':0,'qty':'1','profit':None,'purchase_price':price})
-            utils.telegramMsg(f"Buying <b>{pair}</b> at {price}")
+            stop_loss = price - (price*0.009)
+            long(pair,None,None,stop_loss,price)
         else:
             if long_data['pair'] == 'BTCUPUSDT':
                 pair = 'BTCUPUSDT'
                 ticker = vars.client.get_orderbook_ticker(symbol=pair)
                 price = float(ticker['askPrice'])
-                diff = utils.get_change(price, long_data['purchase_price'])
+                orders.sell_long(long_data,price)
                 utils.remove('long')
-                utils.telegramMsg(f"Selling <b>{pair}</b> at {price}\nDifference:{diff:.2f}%")
     elif data == 'Sell' and long_data is not None:
         if long_data['pair'] == 'BTCUPUSDT':
             pair = 'BTCUPUSDT'
             ticker = vars.client.get_orderbook_ticker(symbol=pair)
             price = float(ticker['bidPrice'])
-            diff = utils.get_change(price, long_data['purchase_price'])
+            orders.sell_long(long_data,price)
             utils.remove('long')
-            utils.telegramMsg(f"Selling <b>{pair}</b> at {price}\nDifference:{diff:.2f}%")
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
@@ -200,7 +194,6 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     step_size = float(symbol_info['filters_dic']['LOT_SIZE']['stepSize'])
     price_filter = float(symbol_info['filters_dic']['PRICE_FILTER']['tickSize'])
     log.debug(f"min:{minimum},price_filter:{price_filter}")
-    #utils.calculateBB(dataFrame)
     if dataFrame is not None:
         row = dataFrame.iloc[-1]
         print(row)
@@ -226,9 +219,8 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
         return
     utils.telegramMsg(f"Buying {amount} of <b>{pair}</b> at {price}")
     orders.market_buy(pair,amount,symbol_info,stop_loss,price)
-    # else:
-    #     log.debug(f"win_percent: {win_percent}")
-    #     utils.remove('long')
+    orders.open_book_socket(pair)
+    vars.buying = False
         
 def short(pair, dataFrame, client):
     return True

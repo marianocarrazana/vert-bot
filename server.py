@@ -92,59 +92,6 @@ def websocket_error(w,e):
     log.error(e)
     #w.close()
 
-def sell_long(long,price):
-    global client
-    purchase = long['purchase_price']
-    state = "Profit" if price > purchase else 'Loss'
-    stats = utils.load('stats')
-    if state == 'Profit':
-        stats['wins'] += 1
-    else:
-        stats['losses'] += 1
-    utils.save('stats',stats)
-    diff = utils.get_change(price, purchase)
-    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
-    orders.market_sell(long['pair'],long['qty'])
-
-handling_book = False
-transactions = {'bids':[],'asks':[],'increasing':False}
-def handle_book_message(ws, msg):
-    global handling_book,book_socket,transactions,client,task_update
-    if handling_book:
-        return
-    handling_book = True
-    msg = json.loads(msg)
-    long = utils.load('long')
-    if long is None:
-        log.info('out long')
-        ws.close()
-        handling_book = False
-        task_update = True
-        return
-    elif long['profit'] is None:
-        handling_book = False
-        return
-    bid = float(msg['b'])
-    #ask = float(msg['a'])
-    transactions['bids'].append(bid)
-    tr_length = len(transactions['bids'])
-    if tr_length > 300:
-        transactions['bids'].pop(0)
-        transactions['increasing'] = transactions['bids'][0] < transactions['bids'][299]
-        #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
-        if bid >= long['profit'] and not transactions['increasing']:
-            sell_long(long,bid)
-        elif bid <= long['stop_loss']:
-            sell_long(long,bid)
-    # transactions['asks'].append(ask)
-    # if len(transactions['asks']) > 200:
-    #     transactions['asks'].pop(0)
-        #print(transactions['asks'])
-    # diff = bid - ask
-    # diff_percent = (diff / (bid / 100))
-    #print(diff_percent)
-    handling_book = False
-    
 def handle_book_depth(ws,msg):
     global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
     long = utils.load('long')
@@ -207,13 +154,13 @@ def handle_long_message(ws, msg):
         stop_loss += stop_levels
         next_stop += stop_levels 
     if last_price < stop_loss:
-        sell_long(long,last_price)
+        orders.sell_long(long,last_price)
         handling_long = False
         return
     period = 14
     a_up = ta.trend.aroon_up(long_dataframe['Close'], window=period, fillna=False)
     if a_up.iloc[-1] > 95:
-        sell_long(long,last_price)
+        orders.sell_long(long,last_price)
         handling_long = False
         return
     handling_long = False
@@ -227,14 +174,6 @@ def checkOcoOrder():
         order = client.get_order(symbol=oco['pair'],orderId=order['orderId'])
         if order['status'] == "FILLED":
             utils.remove('oco')
-    
-def open_book_socket(pair_book):
-    ws_book = websocket.WebSocketApp(f"wss://stream.binance.com:9443/ws/{pair_book}@bookTicker",
-                                on_message = handle_book_message,
-                                on_error = websocket_error)
-    wst = threading.Thread(target=ws_book.run_forever)
-    wst.daemon = True
-    wst.start()
 
 def update_database():
     global cryptoList
@@ -246,34 +185,13 @@ def update_database():
                     utils.save(f'RSI{key}',cryptoList[key]['dataFrame']['rsi'].iloc[-31:-1].tolist())
 
 async def check_task():
-    global task_update,stop_loss,stop_levels,next_stop,long_dataframe
-    if not task_update:
-        return
-    task_update = False
     longDB = utils.load('long')
-    vars.buying = False
-    if longDB is None:
-        log.debug('Examining market...')
-        generateCryptoList()
-    else:
-        if longDB['purchase_price'] is None:
-            utils.remove('long')
-            return
-        log.debug('Selling crypto...')
-        open_book_socket(longDB['pair'].lower())
-        # stop_loss = longDB['stop_loss']
-        # stop_levels = longDB['stop_levels']
-        # next_stop = stop_loss + (stop_levels * 2)
-        # long_dataframe = None
-        # stream_url = 'wss://stream.binance.com:9443/stream?streams=' + longDB['pair'].lower() + '@kline_1m'
-        # ws_long = websocket.WebSocketApp(stream_url,
-        #                         on_message = handle_long_message,
-        #                         on_error = websocket_error)
-        # wst_long = threading.Thread(target=ws_long.run_forever)
-        # wst_long.daemon = True
-        # wst_long.start()
+    #vars.buying = False
+    if longDB is not None:
+        orders.open_book_socket(longDB['pair'].lower())
 
 if __name__ == "__main__":
+    check_task()
     if utils.load('stats') is None:
         utils.save('stats',{'wins':0,'losses':0})
     app = make_app()
