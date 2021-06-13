@@ -16,7 +16,7 @@ if os.environ.get('SIMULATE_ORDERS') == 'True':
 def market_buy(pair, amount, symbol_info, stop_loss, price):
     if simulate:
         price = float(price)
-        profit = price * 1.006
+        profit = price * 1.003
         return utils.save('long',
                 {'pair':pair,'stop_loss':stop_loss,'qty':amount,
                 'profit':profit,'purchase_price':price})
@@ -36,7 +36,7 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
         log.debug(f"order_buy:{order}")
         if order['status'] == 'FILLED':
             price = float(order['fills'][0]['price'])
-            profit = price * 1.006
+            profit = price * 1.003
             #stop_loss = price-diff
             log.debug(f"price:{price} stop_loss:{stop_loss}")
             utils.save('long',
