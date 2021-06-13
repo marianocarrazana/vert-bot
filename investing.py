@@ -134,17 +134,12 @@ def getTechnicalData(pair, interval):
         return 'Neutral'
     buy = summary['BUY']
     sell = summary['SELL']
-    neutral = summary['NEUTRAL']
     if buy >= 15 and sell <= 2:
         return "Strong Buy"
     elif sell >= 15 and buy <= 2:
         return "Strong Sell"
-    elif buy >= neutral and buy > sell:
-        return "Buy"
-    elif sell >= neutral and sell > buy:
-        return "Sell"
     else:
-        return 'None'
+        return recommendation.capitalize()
 
 def getAllTechnicalData():
     interval = [['5mins', 1], ['1hour', 2], [
