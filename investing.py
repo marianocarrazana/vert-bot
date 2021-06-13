@@ -128,7 +128,6 @@ def getTechnicalData(pair, interval):
     interval=interval
     )
     summary = data.get_analysis().summary
-    log.debug(summary)
     recommendation = summary['RECOMMENDATION']
     if recommendation == 'NEUTRAL':
         return 'Neutral'
