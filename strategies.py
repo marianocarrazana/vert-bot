@@ -142,7 +142,7 @@ def examine_btc():
             pair = 'BTCUPUSDT'
             ticker = vars.client.get_orderbook_ticker(symbol=pair)
             price = float(ticker['askPrice'])
-            stop_loss = price - (price*0.009)
+            stop_loss = price - (price*0.005)
             long(pair,None,None,stop_loss,price)
         else:
             if long_data['pair'] == 'BTCDOWNUSDT':
@@ -163,7 +163,7 @@ def examine_btc():
             pair = 'BTCDOWNUSDT'
             ticker = vars.client.get_orderbook_ticker(symbol=pair)
             price = float(ticker['askPrice'])
-            stop_loss = price - (price*0.009)
+            stop_loss = price - (price*0.005)
             long(pair,None,None,stop_loss,price)
         else:
             if long_data['pair'] == 'BTCUPUSDT':
