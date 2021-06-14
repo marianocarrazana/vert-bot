@@ -131,10 +131,12 @@ def handle_book_message(ws, msg):
     if bid >= long['profit']:# and not transactions['increasing']:
         bs = threading.Thread(target=sell_long,args=(long,bid))
         bs.start()
+        handling_book = False
         ws.close()
     elif bid <= long['stop_loss']:
         bs = threading.Thread(target=sell_long,args=(long,bid))
         bs.start()
+        handling_book = False
         ws.close()
     # transactions['asks'].append(ask)
     # if len(transactions['asks']) > 200:
