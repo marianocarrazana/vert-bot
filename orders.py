@@ -83,7 +83,7 @@ def open_book_socket(pair_book):
         on_message = handle_book_message,
         on_error = websocket_error)
     wst = threading.Thread(target=ws_book.run_forever)
-    wst.daemon = True
+    # wst.daemon = True
     wst.start()
 
 def sell_long(long,price):
@@ -122,22 +122,20 @@ def handle_book_message(ws, msg):
         return
     bid = float(msg['b'])
     #ask = float(msg['a'])
-    transactions['bids'].append(bid)
-    tr_length = len(transactions['bids'])
-    if tr_length > 5:
-        transactions['bids'].pop(0)
-        transactions['increasing'] = transactions['bids'][0] < transactions['bids'][4]
+    # transactions['bids'].append(bid)
+    # tr_length = len(transactions['bids'])
+    # if tr_length > 0:
+    #     transactions['bids'].pop(0)
+    #     transactions['increasing'] = transactions['bids'][0] < transactions['bids'][4]
         #log.debug(('up ' if transactions['increasing'] else 'down ') + msg['b'])
-        if bid >= long['profit']:# and not transactions['increasing']:
-            bs = threading.Thread(target=sell_long,args=(long,bid))
-            bs.daemon = True
-            bs.start()
-            ws.close()
-        elif bid <= long['stop_loss']:
-            bs = threading.Thread(target=sell_long,args=(long,bid))
-            bs.daemon = True
-            bs.start()
-            ws.close()
+    if bid >= long['profit']:# and not transactions['increasing']:
+        bs = threading.Thread(target=sell_long,args=(long,bid))
+        bs.start()
+        ws.close()
+    elif bid <= long['stop_loss']:
+        bs = threading.Thread(target=sell_long,args=(long,bid))
+        bs.start()
+        ws.close()
     # transactions['asks'].append(ask)
     # if len(transactions['asks']) > 200:
     #     transactions['asks'].pop(0)
