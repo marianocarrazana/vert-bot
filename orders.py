@@ -155,7 +155,7 @@ def stop_loss_check():
         return
     checking_stop_loss = True
     ticker = client.get_orderbook_ticker(symbol=longDB['pair'])
-    price = ticker['bidPrice']
+    price = float(ticker['bidPrice'])
     if price < longDB['stop_loss']:
         sell_long(longDB,price)
     checking_stop_loss = False
