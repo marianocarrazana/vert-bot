@@ -8,6 +8,7 @@ from binance.helpers import round_step_size
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from decimal import Decimal as D#, ROUND_DOWN, ROUND_UP
 #import decimal
+import pandas as pd 
 from logger import log
 from random import random
 from vars import client
@@ -179,6 +180,28 @@ def examine_btc():
             price = float(ticker['bidPrice'])
             orders.sell_long(long_data,price)
             utils.remove('long')
+
+def donchian_btc():
+    pairs = ['BTCUPUSDT','BTCDOWNUSDT']
+    for pair in pairs:
+        longDB = utils.load('long')
+        bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
+        df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
+        df = utils.candleStringsToNumbers(df)
+        period = 15 if longDB is None else 9
+        dc_low = ta.volatility.donchian_channel_lband(
+        df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
+        v = dc_low.unique()
+        if longDB is None and v[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
+            long(pair,None,None,v[-1],df['close'].iloc[-1])
+            return
+        if longDB is not None:
+            if longDB['pair'] == pair and longDB['stop_loss'] < v[-1]:
+                longDB['stop_loss'] = v[-1]
+                utils.save('long',longDB)
+                return
+        time.sleep(2)
+
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
