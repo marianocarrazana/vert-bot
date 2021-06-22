@@ -188,7 +188,7 @@ def donchian_btc():
         bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        period = 15 if longDB is None else 9
+        period = 15 if longDB is None else 12
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
