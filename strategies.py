@@ -242,7 +242,7 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
         return
     utils.telegramMsg(f"Buying {amount} of <b>{pair}</b> at {price}")
     orders.market_buy(pair,amount,symbol_info,stop_loss,price)
-    orders.open_book_socket(pair)
+    #orders.open_book_socket(pair)
     vars.buying = False
         
 def short(pair, dataFrame, client):

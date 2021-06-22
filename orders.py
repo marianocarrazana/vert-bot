@@ -48,7 +48,8 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
 
 def market_sell(pair,qty):
     if simulate:
-        return utils.remove('long')
+        utils.remove('long')
+        return
     try:
         log.debug(f'Selling: pair:{pair},qty:{qty}')
         order = client.order_market_sell(
@@ -87,7 +88,6 @@ def open_book_socket(pair_book):
     wst.start()
 
 def sell_long(long,price):
-    global client
     purchase = long['purchase_price']
     state = "Profit" if price > purchase else 'Loss'
     stats = utils.load('stats')
@@ -146,3 +146,16 @@ def handle_book_message(ws, msg):
     # diff_percent = (diff / (bid / 100))
     #print(diff_percent)
     handling_book = False
+
+checking_stop_loss = False
+def stop_loss_check():
+    global checking_stop_loss
+    longDB = utils.load("long")
+    if longDB is None or checking_stop_loss:
+        return
+    checking_stop_loss = True
+    ticker = client.get_orderbook_ticker(symbol=longDB['pair'])
+    price = ticker['bidPrice']
+    if price < longDB['stop_loss']:
+        sell_long(longDB,price)
+    checking_stop_loss = False
