@@ -193,7 +193,7 @@ def donchian_btc():
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
         if longDB is None and v[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
-            long(pair,None,None,v[-1],df['close'].iloc[-1])
+            long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
             if longDB['pair'] == pair and longDB['stop_loss'] < v[-1]:
