@@ -182,7 +182,7 @@ def examine_btc():
             utils.remove('long')
 
 def donchian_btc():
-    pairs = ['BTCUPUSDT','BTCDOWNUSDT']
+    pairs = ['BTCUPUSDT']
     for pair in pairs:
         longDB = utils.load('long')
         bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
@@ -196,8 +196,8 @@ def donchian_btc():
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if longDB['pair'] == pair and longDB['stop_loss'] < v[-1]:
-                longDB['stop_loss'] = v[-1]
+            if longDB['pair'] == pair and longDB['stop_loss'] < v[-2]:
+                longDB['stop_loss'] = v[-2]
                 utils.save('long',longDB)
                 return
         time.sleep(2)
