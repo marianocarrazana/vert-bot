@@ -182,9 +182,9 @@ def examine_btc():
             utils.remove('long')
 
 def donchian_btc():
-    pairs = ['BTCUPUSDT']
+    pairs = ['BTCUPUSDT','BTCDOWNUSDT']
     for pair in pairs:
-        longDB = utils.load('long')
+        longDB = utils.load(pair)
         bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
@@ -196,21 +196,21 @@ def donchian_btc():
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if longDB['pair'] == pair and longDB['stop_loss'] < v[-2]:
+            if longDB['stop_loss'] < v[-2]:
                 longDB['stop_loss'] = v[-2]
-                utils.save('long',longDB)
+                utils.save(pair,longDB)
                 return
-        time.sleep(2)
+        time.sleep(1.24)
 
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
         return
     log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:0")
-    if utils.load('long') is not None:
+    if utils.load(pair) is not None:
         return
     vars.buying = True
-    utils.save('long',
+    utils.save(pair,
         {'pair':pair,'stop_loss':stop_loss,'qty':'0','profit':None,'purchase_price':None})
     symbol_info = utils.getSymbolInfo(pair)
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])
@@ -231,13 +231,16 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     balance = float(client.get_asset_balance(asset='USDT')['free'])
     max_investment = float(os.environ.get('MAX_INVESTMENT') or 20)
     amount = balance if balance < max_investment else max_investment
-    amount = (amount*0.95) / price_f
+    account_percent = 0.48
+    if utils.load('BTCUPUSDT') is not None and utils.load('BTCDOWNUSDT') is not None:
+        account_percent = 0.96
+    amount = (amount*account_percent) / price_f
     amount = D.from_float(amount).quantize(D(str(minimum)))
     amount = round_step_size(amount, step_size)
     log.debug(f"amount:{amount} minimum:{minimum}")
     if amount < minimum:
         log.warning('Need moar')
-        utils.remove('long')
+        utils.remove(pair)
         time.sleep(2)
         return
     utils.telegramMsg(f"Buying {amount} of <b>{pair}</b> at {price}")

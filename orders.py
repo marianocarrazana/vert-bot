@@ -17,7 +17,7 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
     if simulate:
         price = float(price)
         profit = price * 1.003
-        return utils.save('long',
+        return utils.save(pair,
                 {'pair':pair,'stop_loss':stop_loss,'qty':amount,
                 'profit':profit,'purchase_price':price})
     try:
@@ -27,11 +27,11 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
     except BinanceAPIException as e:
         log.info(symbol_info)
         log.error(e)
-        return utils.remove('long')
+        return utils.remove(pair)
     except BinanceOrderException as e:
         log.info(symbol_info)
         log.error(e)
-        return utils.remove('long')
+        return utils.remove(pair)
     while True:
         log.debug(f"order_buy:{order}")
         if order['status'] == 'FILLED':
@@ -39,7 +39,7 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
             profit = price * 1.003
             #stop_loss = price-diff
             log.debug(f"price:{price} stop_loss:{stop_loss}")
-            utils.save('long',
+            utils.save(pair,
                 {'pair':pair,'stop_loss':stop_loss,'qty':order['executedQty'],
                 'profit':profit,'purchase_price':price})
             break
@@ -48,7 +48,7 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
 
 def market_sell(pair,qty):
     if simulate:
-        utils.remove('long')
+        utils.remove(pair)
         return
     try:
         log.debug(f'Selling: pair:{pair},qty:{qty}')
@@ -58,11 +58,11 @@ def market_sell(pair,qty):
         log.debug('Order created')
     except BinanceAPIException as e:
         log.error(e)
-        utils.remove('long')
+        utils.remove(pair)
         return
     except BinanceOrderException as e:
         log.error(e)
-        utils.remove('long')
+        utils.remove(pair)
         return
     log.info(f"Sell long order:{order}")
     n = 0
@@ -72,7 +72,7 @@ def market_sell(pair,qty):
             log.error("Long order cant be filled")
             log.debug(order)
         if order['status'] == 'FILLED':
-            utils.remove('long')
+            utils.remove(pair)
             break 
         time.sleep(1)
         order = client.get_order(symbol=pair,orderId=order['orderId'])
@@ -150,12 +150,17 @@ def handle_book_message(ws, msg):
 checking_stop_loss = False
 def stop_loss_check():
     global checking_stop_loss
-    longDB = utils.load("long")
-    if longDB is None or checking_stop_loss:
+    if checking_stop_loss:
         return
     checking_stop_loss = True
-    ticker = client.get_orderbook_ticker(symbol=longDB['pair'])
-    price = float(ticker['bidPrice'])
-    if price < longDB['stop_loss']:
-        sell_long(longDB,price)
+    pairs = ['BTCUPUSDT','BTCDOWNUSDT']
+    for pair in pairs:
+        longDB = utils.load(pair)
+        if longDB is None:
+            continue
+        ticker = client.get_orderbook_ticker(symbol=pair)
+        price = float(ticker['bidPrice'])
+        if price < longDB['stop_loss']:
+            sell_long(longDB,price)
+        time.sleep(0.12)
     checking_stop_loss = False

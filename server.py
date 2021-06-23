@@ -197,7 +197,7 @@ if __name__ == "__main__":
     port = 8888
     app.listen(port)
     log.info(f"Tornado listening on http://localhost:{port}")
-    tsks = ioloop.PeriodicCallback(orders.stop_loss_check, 1223)
+    tsks = ioloop.PeriodicCallback(orders.stop_loss_check, 1623)
     tsks.start() 
     exam_btc = ioloop.PeriodicCallback(strategies.donchian_btc, 1000*20)
     exam_btc.start() 
