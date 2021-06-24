@@ -196,10 +196,10 @@ def donchian_btc():
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if v[-1] < v[-2]:
+            if df['Low'].iloc[-1] < v[-2]:
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
-        time.sleep(0.2)
+        time.sleep(0.5)
 
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
