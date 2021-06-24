@@ -185,7 +185,12 @@ def donchian_btc():
     pairs = ['BTCUPUSDT','BTCDOWNUSDT']
     for pair in pairs:
         longDB = utils.load(pair)
-        bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
+        try:
+            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
+        except BinanceAPIException as e:
+            print(e.status_code)
+            print(e.message)
+            return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
         period = 9 if longDB is None else 14
@@ -193,10 +198,12 @@ def donchian_btc():
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
         if longDB is None and v[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
+            print(f"Donchian values:{v[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
             if df['Low'].iloc[-1] < v[-2]:
+                print(f"Stop loss: {df['Low'].iloc[-1]},{v[-2]}")
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
         time.sleep(0.5)
