@@ -147,12 +147,12 @@ def handle_book_message(ws, msg):
     #print(diff_percent)
     handling_book = False
 
-checking_stop_loss = False
+checking_stop_loss = 0
 def stop_loss_check():
     global checking_stop_loss
-    if checking_stop_loss:
+    if checking_stop_loss > 0 and checking_stop_loss < 29:
         return
-    checking_stop_loss = True
+    checking_stop_loss = checking_stop_loss + 1
     pairs = ['BTCUPUSDT','BTCDOWNUSDT']
     for pair in pairs:
         longDB = utils.load(pair)
@@ -163,4 +163,4 @@ def stop_loss_check():
         if price < longDB['stop_loss']:
             sell_long(longDB,price)
         time.sleep(0.12)
-    checking_stop_loss = False
+    checking_stop_loss = 0
