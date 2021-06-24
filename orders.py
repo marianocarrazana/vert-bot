@@ -97,7 +97,12 @@ def sell_long(long,price):
         stats['losses'] += 1
     utils.save('stats',stats)
     diff = utils.get_change(price, purchase)
-    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%")
+    funds = utils.load('funds')
+    if funds is None:
+        funds = 100.0
+    funds = funds + (funds*(diff/100))
+    utils.save('funds',funds)
+    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%\nFunds:${funds:.1f}")
     market_sell(long['pair'],long['qty'])
 
 def websocket_error(w,e):

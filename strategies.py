@@ -196,8 +196,9 @@ def donchian_btc():
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if longDB['stop_loss'] < v[-2]:
-                longDB['stop_loss'] = v[-2]
+            sl = (v[-1]+v[-2])/2
+            if longDB['stop_loss'] < sl:
+                longDB['stop_loss'] = sl
                 utils.save(pair,longDB)
                 return
         time.sleep(1.24)
