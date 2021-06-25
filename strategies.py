@@ -188,8 +188,7 @@ def donchian_btc():
         try:
             bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
         except BinanceAPIException as e:
-            print(e.status_code)
-            print(e.message)
+            log.error(f"{e.status_code=}\n{e.message=}")
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
@@ -197,7 +196,7 @@ def donchian_btc():
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
-        if longDB is None and dc_low.iloc[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
+        if longDB is None and dc_low.iloc[-1] > v[-2] and v[-2] < v[-3]:
             log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
