@@ -188,7 +188,7 @@ def donchian_btc():
         try:
             bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
         except BinanceAPIException as e:
-            log.error(f"{e.status_code=}\n{e.message=}")
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
