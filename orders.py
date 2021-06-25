@@ -90,6 +90,8 @@ def open_book_socket(pair_book):
 
 def sell_long(long,price):
     purchase = long['purchase_price']
+    if purchase is None:
+        return
     state = "Profit" if price > purchase else 'Loss'
     stats = utils.load('stats')
     if state == 'Profit':
