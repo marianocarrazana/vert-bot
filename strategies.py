@@ -197,8 +197,8 @@ def donchian_btc():
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
-        if longDB is None and v[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
-            print(f"Donchian values:{v[-1]},{v[-2]},{v[-3]},{v[-4]}")
+        if longDB is None and dc_low.iloc[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
+            print(f"Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
@@ -206,7 +206,7 @@ def donchian_btc():
                 print(f"Stop loss: {df['Low'].iloc[-1]},{v[-2]}")
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
-        time.sleep(0.5)
+        time.sleep(2)
 
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):

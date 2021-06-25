@@ -17,9 +17,10 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
     if simulate:
         price = float(price)
         profit = price * 1.003
-        return utils.save(pair,
+        utils.save(pair,
                 {'pair':pair,'stop_loss':stop_loss,'qty':amount,
                 'profit':profit,'purchase_price':price})
+        return
     try:
         order = client.order_market_buy(
             symbol=pair,
