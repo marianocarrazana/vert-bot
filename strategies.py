@@ -198,12 +198,12 @@ def donchian_btc():
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
         if longDB is None and dc_low.iloc[-1] > v[-2] and v[-2] < v[-3] and v[-3] < v[-4]:
-            print(f"Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
+            log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
             if df['Low'].iloc[-1] < v[-2]:
-                print(f"Stop loss: {df['Low'].iloc[-1]},{v[-2]}")
+                log.debug(f"{pair} Stop loss: {df['Low'].iloc[-1]},{v[-2]}")
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
         time.sleep(2)
@@ -222,13 +222,12 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     minimum = float(symbol_info['filters_dic']['LOT_SIZE']['minQty'])
     step_size = float(symbol_info['filters_dic']['LOT_SIZE']['stepSize'])
     price_filter = float(symbol_info['filters_dic']['PRICE_FILTER']['tickSize'])
-    log.debug(f"min:{minimum},price_filter:{price_filter}")
+    #log.debug(f"min:{minimum},price_filter:{price_filter}")
     if dataFrame is not None:
         row = dataFrame.iloc[-1]
-        print(row)
         price_f = float(row['Close'])
     price = D.from_float(price_f).quantize(D(str(price_filter)))
-    log.debug(str(price))
+    #log.debug(str(price))
     #diff = row['bb_ma'] - row['bb_l']
     #print('diff:',diff,'price:',row['Close'],'bb_l',row['bb_l'],'bb_h',row['bb_h'])
     #profit = row['Close'] + diff
@@ -243,7 +242,7 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     amount = (amount*account_percent) / price_f
     amount = D.from_float(amount).quantize(D(str(minimum)))
     amount = round_step_size(amount, step_size)
-    log.debug(f"amount:{amount} minimum:{minimum}")
+    #log.debug(f"amount:{amount} minimum:{minimum}")
     if amount < minimum:
         log.warning('Need moar')
         utils.remove(pair)
