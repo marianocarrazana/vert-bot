@@ -7,6 +7,7 @@ import utils
 import pandas as pd 
 import json
 from investing import CRYPTO
+import vars
 
 class MainHandler(web.RequestHandler):
     def get(self):
@@ -28,6 +29,12 @@ class LogHandler(web.RequestHandler):
         self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         f = open("debug.log", "r").read()
         self.write(f.replace("\n","<br>"))
+
+class SyslogHandler(web.RequestHandler):
+    def get(self):
+        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        output = ""
+        self.write(output.replace("\n","<br>"))
 
 class PricesHandler(web.RequestHandler):
     def get(self, pair):

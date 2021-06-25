@@ -15,7 +15,6 @@ import web_handlers
 import vars
 from vars import client
 import orders
-
 #Global Variables
 # if os.environ.get('BINANCE_TESTING') == 'True':
 #     client.API_URL = 'https://testnet.binance.vision/api'
@@ -34,6 +33,7 @@ def make_app():
     return web.Application([
         (r"/", web_handlers.MainHandler),
         (r"/log", web_handlers.LogHandler),
+        (r"/syslog", web_handlers.SyslogHandler),
         # (r"/price/(\w+)", web_handlers.PricesHandler),
         # (r"/klines/(\w+)", web_handlers.KlinesHandler),
         # (r"/test/(\w+)", web_handlers.TestHandler),

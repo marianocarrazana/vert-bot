@@ -182,8 +182,7 @@ def examine_btc():
             utils.remove('long')
 
 def donchian_btc():
-    pairs = ['BTCUPUSDT','BTCDOWNUSDT']
-    for pair in pairs:
+    for pair in vars.cryptoList:
         longDB = utils.load(pair)
         try:
             bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
@@ -192,7 +191,9 @@ def donchian_btc():
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        period = 10 if longDB is None else 15
+        period = 12 if longDB is None else 15
+        # dc_high = ta.volatility.donchian_channel_hband(
+        # df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
