@@ -208,6 +208,18 @@ def donchian_btc():
                 return
         time.sleep(2)
 
+def volume_check():
+    output = []
+    for pair in vars.cryptoList:
+        try:
+            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_30MINUTE, limit=5)
+        except BinanceAPIException as e:
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+            return
+        output.append(pair+" Vol:\n"+bars[-2][5])
+        time.sleep(1)
+    utils.telegramMsg('\n'.join(output))
+
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
         print("Cancel buy")

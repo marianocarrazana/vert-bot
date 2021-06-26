@@ -33,7 +33,6 @@ def make_app():
     return web.Application([
         (r"/", web_handlers.MainHandler),
         (r"/log", web_handlers.LogHandler),
-        (r"/syslog", web_handlers.SyslogHandler),
         # (r"/price/(\w+)", web_handlers.PricesHandler),
         # (r"/klines/(\w+)", web_handlers.KlinesHandler),
         # (r"/test/(\w+)", web_handlers.TestHandler),
@@ -197,10 +196,10 @@ if __name__ == "__main__":
     port = 8888
     app.listen(port)
     log.info(f"Tornado listening on http://localhost:{port}")
-    # tsks = ioloop.PeriodicCallback(orders.stop_loss_check, 1623)
-    # tsks.start() 
+    tsks = ioloop.PeriodicCallback(strategies.volume_check, minutes(30))
+    tsks.start() 
     exam_btc = ioloop.PeriodicCallback(strategies.donchian_btc, 5000)
-    exam_btc.start() 
+    # exam_btc.start() 
     #ioloop.IOLoop.current().spawn_callback(strategies.donchian_btc)
-    #ioloop.IOLoop.current().spawn_callback(check_task)
+    ioloop.IOLoop.current().spawn_callback(strategies.volume_check)
     ioloop.IOLoop.current().start()#run forever
