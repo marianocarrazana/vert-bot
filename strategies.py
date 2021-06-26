@@ -192,6 +192,7 @@ def donchian_btc():
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
         period = 12 if longDB is None else 15
+        vars.cryptoList[pair]['volume_30m'] = df['Volume'].iloc[-31:-1].sum()
         # dc_high = ta.volatility.donchian_channel_hband(
         # df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         dc_low = ta.volatility.donchian_channel_lband(
@@ -207,18 +208,6 @@ def donchian_btc():
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
         time.sleep(2)
-
-def volume_check():
-    output = []
-    for pair in vars.cryptoList:
-        try:
-            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_30MINUTE, limit=5)
-        except BinanceAPIException as e:
-            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
-            return
-        output.append(pair+" Vol:\n"+bars[-2][5])
-        time.sleep(1)
-    utils.telegramMsg('\n'.join(output))
 
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
@@ -262,6 +251,11 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     orders.market_buy(pair,amount,symbol_info,stop_loss,price)
     #orders.open_book_socket(pair)
     vars.buying = False
+    output = []
+    for ind in vars.cryptoList:
+        vol = vars.cryptoList[ind]['volume_30m'] or ''
+        output.append(ind+" Vol:\n"+vol)
+    utils.telegramMsg('\n'.join(output))
         
 def short(pair, dataFrame, client):
     return True
