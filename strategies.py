@@ -199,6 +199,11 @@ def donchian_btc():
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
         if longDB is None and dc_low.iloc[-1] > v[-2] and v[-2] > v[-3] and v[-3] < v[-4]:
+            now = time.time()
+            time_diff = now - vars.cryptoList[pair]['last_buy']
+            if time_diff < 60*5:
+                continue
+            vars.cryptoList[pair]['last_buy'] = now
             log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
