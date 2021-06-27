@@ -208,7 +208,11 @@ def donchian_btc():
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if df['Low'].iloc[-1] < v[-2]:
+            if longDB['purchase_price'] is not None:
+                diff = utils.get_change(df['Close'].iloc[-1],longDB['purchase_price'])
+            else:
+                diff = 0.0
+            if df['Low'].iloc[-1] < v[-2] or diff >= 4.0:
                 log.debug(f"{pair} Stop loss: {df['Low'].iloc[-1]},{v[-2]}")
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
@@ -259,7 +263,7 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     output = []
     for ind in vars.cryptoList:
         vol = str(vars.cryptoList[ind]['volume_30m']) or ''
-        output.append(ind+" Vol:\n"+vol)
+        output.append(f"{ind} Vol:\n{vol:.1f}")
     utils.telegramMsg('\n'.join(output))
         
 def short(pair, dataFrame, client):
