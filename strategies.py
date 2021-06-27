@@ -199,6 +199,7 @@ def donchian_btc():
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
         if longDB is None and dc_low.iloc[-1] > v[-2] and v[-2] > v[-3] and v[-3] < v[-4]:
+            vars.cryptoList[pair]['overbought'] = False
             now = time.time()
             time_diff = now - vars.cryptoList[pair]['last_buy']
             if time_diff < 60*5:
@@ -208,12 +209,14 @@ def donchian_btc():
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if longDB['purchase_price'] is not None:
-                diff = utils.get_change(df['Close'].iloc[-1],longDB['purchase_price'])
-            else:
-                diff = 0.0
-            if df['Low'].iloc[-1] < v[-2] or diff >= 4.0:
-                log.debug(f"{pair} Stop loss: {df['Low'].iloc[-1]},{v[-2]}")
+            utils.calculateRSI(df,15)
+            if df['rsi'].iloc[-2] >= 70:
+                vars.cryptoList[pair]['overbought'] = True
+            if vars.cryptoList[pair]['overbought']:
+                dc_low = ta.volatility.donchian_channel_lband(
+                    df['High'], df['Low'], df['Close'], window=7, offset=0, fillna=False)
+            if df['Low'].iloc[-1] < dc_low.iloc[-2]:
+                log.debug(f"{pair} Stop loss: {df['Low'].iloc[-1]},{dc_low.iloc[-2]}")
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return
         time.sleep(2)

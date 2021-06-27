@@ -44,11 +44,11 @@ def calculateBB(dataFrame):
     dataFrame['bb_ma'] = indicator_bb.bollinger_mavg()
     dataFrame['bb_l'] = indicator_bb.bollinger_lband()
 
-def calculateRSI(dataFrame):
+def calculateRSI(dataFrame,period=14):
     # if 'rsi' in dataFrame:
     #     del dataFrame['rsi']
     indicator_rsi = ta.momentum.RSIIndicator(
-        close=dataFrame['Close'], window=14)
+        close=dataFrame['Close'], window=period)
     dataFrame['rsi'] = indicator_rsi.rsi()
 
 def telegramMsg(message,error=False):
