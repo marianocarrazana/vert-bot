@@ -192,9 +192,9 @@ def donchian_btc():
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
         period = 12 if longDB is None else 15
-        vars.cryptoList[pair]['volume_30m'] = df['Volume'].iloc[-31:-1].sum()
-        # dc_high = ta.volatility.donchian_channel_hband(
-        # df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
+        volume = df['Volume'].iloc[-31:-1].sum()
+        price = (df['Close'].iloc[-31] + df['Close'].iloc[-1]) / 2
+        vars.cryptoList[pair]['volume_30m'] = volume * price
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
         v = dc_low.unique()
