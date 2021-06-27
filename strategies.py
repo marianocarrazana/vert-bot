@@ -265,7 +265,7 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     vars.buying = False
     output = []
     for ind in vars.cryptoList:
-        vol = str(vars.cryptoList[ind]['volume_30m']) or ''
+        vol = vars.cryptoList[ind]['volume_30m'] or 0.0
         output.append(f"{ind} Vol:\n{vol:.1f}")
     utils.telegramMsg('\n'.join(output))
         
