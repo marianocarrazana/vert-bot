@@ -191,11 +191,11 @@ def donchian_btc():
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        period = 12 if longDB is None else 15
-        if period == 15 and vars.cryptoList[pair]['high_risk']:
-            period = 9
-        volume = df['Volume'].iloc[-31:-1].sum()
-        price = (df['Close'].iloc[-31] + df['Close'].iloc[-1]) / 2
+        period = 10 if longDB is None else 14
+        if period == 14 and vars.cryptoList[pair]['high_risk']:
+            period = 8
+        volume = df['Volume'].iloc[-21:-1].sum()
+        price = (df['Close'].iloc[-21] + df['Close'].iloc[-1]) / 2
         vars.cryptoList[pair]['volume_30m'] = volume * price
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
@@ -208,18 +208,18 @@ def donchian_btc():
                 continue
             vars.cryptoList[pair]['last_buy'] = now
             price_diff = utils.get_change(df['Close'].iloc[-1],dc_low.iloc[-1])
-            vars.cryptoList[pair]['high_risk'] = price_diff > 0.75
+            vars.cryptoList[pair]['high_risk'] = price_diff > 1.5
             print('Price Diff',vars.cryptoList[pair]['high_risk'],price_diff)
             log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            utils.calculateRSI(df,15)
+            utils.calculateRSI(df)
             if df['rsi'].iloc[-2] >= 70:
                 vars.cryptoList[pair]['overbought'] = True
             if vars.cryptoList[pair]['overbought']:
                 dc_low = ta.volatility.donchian_channel_lband(
-                    df['High'], df['Low'], df['Close'], window=7, offset=0, fillna=False)
+                    df['High'], df['Low'], df['Close'], window=6, offset=0, fillna=False)
             if df['Low'].iloc[-1] < dc_low.iloc[-2]:
                 vars.cryptoList[pair]['high_risk'] = False
                 log.debug(f"{pair} Stop loss: {df['Low'].iloc[-1]},{dc_low.iloc[-2]}")
