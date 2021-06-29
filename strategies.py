@@ -191,6 +191,7 @@ def donchian_btc():
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
+        utils.calculateRSI(df)
         period = 10 if longDB is None else 14
         if period == 14 and vars.cryptoList[pair]['high_risk']:
             period = 8
@@ -207,14 +208,13 @@ def donchian_btc():
             if time_diff < 60*5:
                 continue
             vars.cryptoList[pair]['last_buy'] = now
-            price_diff = utils.get_change(df['Close'].iloc[-1],dc_low.iloc[-1])
-            vars.cryptoList[pair]['high_risk'] = price_diff > 1.5
-            print('Price Diff',vars.cryptoList[pair]['high_risk'],price_diff)
+            #price_diff = utils.get_change(df['Close'].iloc[-1],dc_low.iloc[-1])
+            vars.cryptoList[pair]['high_risk'] = df['rsi'].iloc[-1] > 50
+            print('Price Diff',vars.cryptoList[pair]['high_risk'],df['rsi'].iloc[-1])
             log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            utils.calculateRSI(df)
             if df['rsi'].iloc[-2] >= 70:
                 vars.cryptoList[pair]['overbought'] = True
             if vars.cryptoList[pair]['overbought']:
