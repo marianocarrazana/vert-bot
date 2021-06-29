@@ -198,7 +198,7 @@ if __name__ == "__main__":
     log.info(f"Tornado listening on http://localhost:{port}")
     # tsks = ioloop.PeriodicCallback(strategies.volume_check, minutes(30))
     # tsks.start() 
-    exam_btc = ioloop.PeriodicCallback(strategies.donchian_btc, 11003)
+    exam_btc = ioloop.PeriodicCallback(strategies.supertrend, 11003)
     exam_btc.start() 
     #ioloop.IOLoop.current().spawn_callback(strategies.donchian_btc)
     # ioloop.IOLoop.current().spawn_callback(strategies.volume_check)

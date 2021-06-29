@@ -2,6 +2,7 @@
 import ta
 import requests
 import urllib.parse
+import pandas as pd 
 from tinydb import TinyDB, Query
 from logger import log
 from vars import client
@@ -50,6 +51,32 @@ def calculateRSI(dataFrame,period=14):
     indicator_rsi = ta.momentum.RSIIndicator(
         close=dataFrame['Close'], window=period)
     dataFrame['rsi'] = indicator_rsi.rsi()
+
+def calculate_supertrend(data_frame,atr_period=9,atr_multiplier=3.0):
+    atr = ta.volatility.AverageTrueRange(data_frame['High'], data_frame['Low'], data_frame['Close'],window=atr_period,fillna=True)
+    data_frame['atr'] = atr.average_true_range()
+    empty_arr = [0] * len(data_frame)
+    data_frame['up'] = empty_arr
+    data_frame['down'] = empty_arr
+    data_frame['st'] = empty_arr
+    for index, row in data_frame.iterrows():
+        if index == 0:
+            data_frame.loc[index,'st'] = 0
+            continue
+        last_close = data_frame.loc[index-1,'Close']
+        up = row['Open']-(atr_multiplier*row['atr'])
+        up1 = data_frame.loc[index-1,'up'] or up
+        data_frame.loc[index,'up'] = max(up,up1) if last_close > up1 else up
+        down = row['Open']+(atr_multiplier*row['atr'])
+        down1 = data_frame['down'].loc[index-1] or down
+        data_frame.loc[index,'down'] = min(down, down1) if last_close < down1 else down
+        trend = 1
+        trend = data_frame['st'].loc[index-1] or trend
+        if trend == -1 and row['Close'] > down1:
+            trend = 1
+        elif trend == 1 and row['Close'] < up1:
+            trend = -1
+        data_frame.loc[index,'st'] = trend
 
 def telegramMsg(message,error=False):
     #log.debug(f"Sending message:{message}")

@@ -227,6 +227,34 @@ def donchian_btc():
                 return
         time.sleep(2)
 
+def supertrend():
+    for pair in vars.cryptoList:
+        longDB = utils.load(pair)
+        try:
+            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=200)
+        except BinanceAPIException as e:
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+            return
+        df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
+        df = utils.candleStringsToNumbers(df)
+        utils.calculateRSI(df)
+        overbought = df['rsi'].iloc[-7:-1].max() >= 70
+        utils.calculate_supertrend(df,9,1.2 if overbought else 3.0)
+        if longDB is None and df['st'].iloc[-1] == 1 and df['st'].iloc[-2] == -1:
+            vars.cryptoList[pair]['overbought'] = False
+            now = time.time()
+            time_diff = now - vars.cryptoList[pair]['last_buy']
+            if time_diff < 60*4:
+                continue
+            vars.cryptoList[pair]['last_buy'] = now
+            long(pair,None,None,0.0,df['Close'].iloc[-1])
+            return
+        if longDB is not None:
+            if df['st'].iloc[-1] == -1 and df['st'].iloc[-2] == 1:
+                orders.sell_long(longDB,df['Close'].iloc[-1])
+                return
+        time.sleep(2)
+
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
         print("Cancel buy")
