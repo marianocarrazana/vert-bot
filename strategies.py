@@ -237,8 +237,8 @@ def supertrend():
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        utils.calculateRSI(df)
-        overbought = df['rsi'].iloc[-7:-1].max() >= 70
+        utils.calculateRSI(df,15)
+        overbought = df['rsi'].iloc[-5:-1].max() >= 70
         utils.calculate_supertrend(df,9,1.2 if overbought else 3.0)
         if longDB is None and df['st'].iloc[-1] == 1 and df['st'].iloc[-2] == -1:
             vars.cryptoList[pair]['overbought'] = False
