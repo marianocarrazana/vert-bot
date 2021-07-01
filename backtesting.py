@@ -16,7 +16,7 @@ def test_rsi(pair: str):
     for rsi_period in range(6, 16):
         #log.debug(f'Testing with period {rsi_period}')
         utils.calculateRSI(df,rsi_period)
-        for i in range(1,71):
+        for i in range(20,71):
             sleep(0.12)
             penultimate = 50
             funds = 100.00
