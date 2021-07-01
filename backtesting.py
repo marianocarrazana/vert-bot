@@ -57,9 +57,10 @@ def load_data():
     now = datetime.datetime.now()
     data = {'last_check':now.day}
     for pair in vars.cryptoList:
-        vars.cryptoList[pair]['best_rsi'] = test_rsi(pair)
-        if vars.cryptoList[pair]['best_rsi'] is not None:
-            data[pair] = vars.cryptoList[pair]['best_rsi']
+        get_data = test_rsi(pair)
+        if get_data is not None:
+            data[pair] = get_data
+            vars.cryptoList[pair]['best_rsi'] = get_data
         else:
             return
     utils.save('best_rsi',data)
