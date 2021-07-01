@@ -49,7 +49,7 @@ def calculateRSI(dataFrame,period=14):
     # if 'rsi' in dataFrame:
     #     del dataFrame['rsi']
     indicator_rsi = ta.momentum.RSIIndicator(
-        close=dataFrame['Close'], window=period)
+        close=dataFrame['Open'], window=period)
     dataFrame['rsi'] = indicator_rsi.rsi()
 
 def calculate_supertrend(data_frame,atr_period=9,atr_multiplier=3.0):
