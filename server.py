@@ -63,73 +63,9 @@ def update_kline(df,pair,msg):
         df = df.drop(df.index[0])
     return df
 
-ws_klines = []
-def open_kline_stream(pair,index):
-    global ws_klines
-    stream_url = 'wss://stream.binance.com:9443/stream?streams=' + pair.lower() + '@depth20@100ms'
-    ws_klines[index] = websocket.WebSocketApp(stream_url,
-                              on_message = handle_book_depth,
-                              on_error = websocket_error)
-    wst = threading.Thread(target=ws_klines[index].run_forever)
-    wst.daemon = True
-    wst.start()
-
-def generateCryptoList():
-    global cryptoList,book_socket,multiplex_socket,ws_klines,closed_connections
-    cryptoList= {}
-    closed_connections = 0
-    ws_klines = []
-    i = 0
-    for cr in investing.CRYPTO:
-        ws_klines.append(None)
-        cryptoList[cr['binance_id']] = {'dataFrame':None,'calculated':True,'investingId':cr['investing_id']}
-        open_kline_stream(cr['binance_id'],i)
-        i += 1
-        time.sleep(1)
-
 def websocket_error(w,e):
     log.error(e)
     #w.close()
-
-def handle_book_depth(ws,msg):
-    global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
-    long = utils.load('long')
-    if long is not None:
-        if long['purchase_price'] is not None:
-            ws.close()
-            closed_connections += 1
-            if(closed_connections == len(cryptoList)):
-                log.debug(f"Opening websocket for {long['pair']}")
-                task_update = True
-        return
-    msg = json.loads(msg)
-    regex = r"(\w+)@"
-    pair = re.search(regex, msg['stream'])[1].upper()
-    if not cryptoList[pair]['calculated']:
-        return
-    cryptoList[pair]['calculated'] = False
-    strategies.book_depth(msg['data']['bids'],msg['data']['asks'],pair)
-    cryptoList[pair]['calculated'] = True
-
-def handle_socket_message(ws, msg):
-    global cryptoList,client,book_socket,multiplex_socket,closed_connections,task_update
-    long = utils.load('long')
-    if long is not None:
-        if long['purchase_price'] is not None:
-            ws.close()
-            closed_connections += 1
-            if(closed_connections == len(cryptoList)):
-                log.debug(f"Opening websocket for {long['pair']}")
-                task_update = True
-        return
-    msg = json.loads(msg)
-    pair = msg['data']['s']
-    if not cryptoList[pair]['calculated']:
-        return
-    cryptoList[pair]['calculated'] = False
-    cryptoList[pair]['dataFrame'] = update_kline(cryptoList[pair]['dataFrame'],pair,msg)
-    strategies.dc_aroon(cryptoList[pair],pair,client)
-    cryptoList[pair]['calculated'] = True
 
 handling_long = False
 long_dataframe = None
@@ -163,31 +99,6 @@ def handle_long_message(ws, msg):
         handling_long = False
         return
     handling_long = False
-
-def checkOcoOrder():
-    oco = utils.load('oco')
-    if oco is None:
-        return False
-    log.debug(f"oco,{oco}")
-    for order in oco['orders']:
-        order = client.get_order(symbol=oco['pair'],orderId=order['orderId'])
-        if order['status'] == "FILLED":
-            utils.remove('oco')
-
-def update_database():
-    global cryptoList
-    longDB = utils.load('long')
-    if longDB is None:
-        for key in cryptoList:
-            if cryptoList[key]['dataFrame'] is not None:
-                if 'rsi' in cryptoList[key]['dataFrame']:
-                    utils.save(f'RSI{key}',cryptoList[key]['dataFrame']['rsi'].iloc[-31:-1].tolist())
-
-async def check_task():
-    longDB = utils.load('long')
-    #vars.buying = False
-    if longDB is not None:
-        orders.open_book_socket(longDB['pair'].lower())
 
 if __name__ == "__main__":
     if utils.load('stats') is None:

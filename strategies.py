@@ -92,39 +92,9 @@ def donchian_btc():
                 return
         time.sleep(2)
 
-def supertrend():
-    for pair in vars.cryptoList:
-        longDB = utils.load(pair)
-        try:
-            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_15MINUTE, limit=200)
-        except BinanceAPIException as e:
-            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
-            return
-        df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
-        df = utils.candleStringsToNumbers(df)
-        utils.calculateRSI(df,15)
-        overbought = df['rsi'].iloc[-5:-1].max() >= 70
-        utils.calculate_supertrend(df,9,1.2 if overbought else 3.0)
-        if longDB is None and df['st'].iloc[-1] == 1 and df['st'].iloc[-2] == -1:
-            vars.cryptoList[pair]['overbought'] = False
-            now = time.time()
-            time_diff = now - vars.cryptoList[pair]['last_buy']
-            if time_diff < 60*4:
-                continue
-            vars.cryptoList[pair]['last_buy'] = now
-            long(pair,None,None,0.0,df['Close'].iloc[-1])
-            return
-        if longDB is not None:
-            if df['st'].iloc[-1] == -1 and df['st'].iloc[-2] == 1:
-                orders.sell_long(longDB,df['Close'].iloc[-1])
-                return
-        time.sleep(2)
-
 def long(pair, dataFrame, old_client, stop_loss, price_f):
     if vars.buying:
         print("Cancel buy")
-        return
-    if utils.load('BTCUPUSDT') is not None or utils.load('BTCDOWNUSDT') is not None:
         return
     log.debug(f"LONG pair:{pair}, stop_loss:{stop_loss}, stop_levels:0")
     if utils.load(pair) is not None:
@@ -148,9 +118,9 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     balance = float(client.get_asset_balance(asset='USDT')['free'])
     max_investment = float(os.environ.get('MAX_INVESTMENT') or 20)
     amount = balance if balance < max_investment else max_investment
-    account_percent = 0.97
-    # if utils.load('LINKUPUSDT') is not None and utils.load('LINKDOWNUSDT') is not None:
-    #     account_percent = 0.96
+    account_percent = 0.49
+    if utils.load('BTCUPUSDT') is not None and utils.load('BTCDOWNUSDT') is not None:
+        account_percent = 0.96
     amount = (amount*account_percent) / price_f
     amount = D.from_float(amount).quantize(D(str(minimum)))
     amount = round_step_size(amount, step_size)
