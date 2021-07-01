@@ -15,6 +15,7 @@ import web_handlers
 import vars
 from vars import client
 import orders
+import backtesting
 #Global Variables
 # if os.environ.get('BINANCE_TESTING') == 'True':
 #     client.API_URL = 'https://testnet.binance.vision/api'
@@ -107,10 +108,10 @@ if __name__ == "__main__":
     port = 8888
     app.listen(port)
     log.info(f"Tornado listening on http://localhost:{port}")
-    # tsks = ioloop.PeriodicCallback(strategies.volume_check, minutes(30))
-    # tsks.start() 
+    tsks = ioloop.PeriodicCallback(backtesting.check, minutes(30))
+    tsks.start() 
     exam_crypto = ioloop.PeriodicCallback(strategies.RSI, 5003)
     exam_crypto.start() 
-    ioloop.IOLoop.current().spawn_callback(strategies.RSI)
+    ioloop.IOLoop.current().spawn_callback(backtesting.check)
     # ioloop.IOLoop.current().spawn_callback(strategies.volume_check)
     ioloop.IOLoop.current().start()#run forever

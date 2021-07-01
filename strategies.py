@@ -18,6 +18,9 @@ from tradingview_ta import Interval
 
 def RSI():
     for pair in vars.cryptoList:
+        best_rsi = vars.cryptoList[pair]['best_rsi']
+        if best_rsi is None:
+            return
         longDB = utils.load(pair)
         try:
             bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
@@ -26,7 +29,7 @@ def RSI():
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        period = vars.cryptoList[pair]['rsi_period']
+        period = best_rsi['rsi_period']
         utils.calculateRSI(df,period)
         last = df["rsi"].iloc[-1]
         penultimate = df["rsi"].iloc[-2]
@@ -36,7 +39,7 @@ def RSI():
             time_diff = now - vars.cryptoList[pair]['last_buy']
             if time_diff < 60*4:
                 continue
-            stop_loss = price - (price * (vars.cryptoList[pair]['stop_loss']/100))
+            stop_loss = price - (price * (best_rsi['stop_loss']/100))
             vars.cryptoList[pair]['last_buy'] = now
             long(pair,None,None,stop_loss,price)
             return
