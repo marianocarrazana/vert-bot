@@ -5,10 +5,15 @@ from binance import Client
 from logger import log
 from time import sleep
 import datetime
+from binance.exceptions import BinanceAPIException, BinanceOrderException
 
 def test_rsi(pair: str):
     log.debug(f'Downloading data for {pair}...')
-    bars = vars.client.get_historical_klines(pair.upper(), Client.KLINE_INTERVAL_1MINUTE, "2 day ago UTC")
+    try:
+        bars = vars.client.get_historical_klines(pair.upper(), Client.KLINE_INTERVAL_1MINUTE, "2 day ago UTC")
+    except BinanceAPIException as e:
+        log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+        return None
     log.debug('Proccesing data...')
     df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
     df = utils.candleStringsToNumbers(df)
@@ -53,7 +58,10 @@ def load_data():
     data = {'last_check':now.day}
     for pair in vars.cryptoList:
         vars.cryptoList[pair]['best_rsi'] = test_rsi(pair)
-        data[pair] = vars.cryptoList[pair]['best_rsi']
+        if vars.cryptoList[pair]['best_rsi'] is not None:
+            data[pair] = vars.cryptoList[pair]['best_rsi']
+        else:
+            return
     utils.save('best_rsi',data)
 
 def check():
