@@ -23,7 +23,7 @@ def RSI():
             return
         longDB = utils.load(pair)
         try:
-            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_1MINUTE, limit=200)
+            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=200)
         except BinanceAPIException as e:
             log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
             return

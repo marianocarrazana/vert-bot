@@ -10,7 +10,7 @@ from binance.exceptions import BinanceAPIException, BinanceOrderException
 def test_rsi(pair: str):
     log.debug(f'Downloading data for {pair}...')
     try:
-        bars = vars.client.get_historical_klines(pair.upper(), Client.KLINE_INTERVAL_1MINUTE, "2 day ago UTC")
+        bars = vars.client.get_historical_klines(pair.upper(), Client.KLINE_INTERVAL_3MINUTE, "5 day ago UTC")
     except BinanceAPIException as e:
         log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
         return None
@@ -18,11 +18,11 @@ def test_rsi(pair: str):
     df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
     df = utils.candleStringsToNumbers(df)
     best = {'funds':0}
-    for rsi_period in range(6, 16):
+    for rsi_period in range(6, 17):
         #log.debug(f'Testing with period {rsi_period}')
         utils.calculateRSI(df,rsi_period)
         for i in range(20,71):
-            sleep(0.12)
+            sleep(0.1)
             penultimate = 50
             funds = 100.00
             stop_loss_percent = i/10
@@ -64,6 +64,7 @@ def load_data():
         else:
             return
     utils.save('best_rsi',data)
+    utils.telegramMsg(f"{data}")
 
 def check():
     best_rsi = utils.load('best_rsi')
