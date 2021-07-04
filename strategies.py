@@ -75,8 +75,8 @@ def donchian_btc():
             if time_diff < 60*4:
                 continue
             vars.cryptoList[pair]['last_buy'] = now
-            print('Price Diff',vars.cryptoList[pair]['high_risk'],df['rsi'].iloc[-1])
-            log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
+            print('Price Diff',vars.cryptoList[pair]['high_risk'])
+            log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{dc_low.iloc[-2]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
