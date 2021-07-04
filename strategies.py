@@ -51,45 +51,36 @@ def RSI():
 
 def donchian_btc():
     for pair in vars.cryptoList:
+        best_dc = vars.cryptoList[pair]['best_dc']
+        if best_dc is None:
+            return
         longDB = utils.load(pair)
         try:
-            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=200)
+            bars = client.get_klines(symbol=pair, interval=best_dc['kline_time'], limit=50)
         except BinanceAPIException as e:
             log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
             return
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        utils.calculateRSI(df)
-        period = 10 if longDB is None else 14
-        if period == 14 and vars.cryptoList[pair]['high_risk']:
-            period = 8
-        volume = df['Volume'].iloc[-21:-1].sum()
-        price = (df['Close'].iloc[-21] + df['Close'].iloc[-1]) / 2
-        vars.cryptoList[pair]['volume_30m'] = volume * price
+        period = best_dc['dc_period']
+        #volume = df['Volume'].iloc[-21:-1].sum()
+        #price = (df['Close'].iloc[-21] + df['Close'].iloc[-1]) / 2
+        #vars.cryptoList[pair]['volume_30m'] = volume * price
         dc_low = ta.volatility.donchian_channel_lband(
         df['High'], df['Low'], df['Close'], window=period, offset=0, fillna=False)
-        v = dc_low.iloc[-50:-4].unique()
-        if longDB is None and dc_low.iloc[-1] >= dc_low.iloc[-2] and dc_low.iloc[-2] > dc_low.iloc[-3] and dc_low.iloc[-3] == v[-1] and v[-1] < v[-2]:
-            vars.cryptoList[pair]['overbought'] = False
+        v = dc_low.iloc[-45:-4].unique()
+        if longDB is None and dc_low.iloc[-1] >= dc_low.iloc[-2] and dc_low.iloc[-2] > dc_low.iloc[-3] and v[-1] < v[-2]:
             now = time.time()
             time_diff = now - vars.cryptoList[pair]['last_buy']
-            if time_diff < 60*5:
+            if time_diff < 60*4:
                 continue
             vars.cryptoList[pair]['last_buy'] = now
-            #price_diff = utils.get_change(df['Close'].iloc[-1],dc_low.iloc[-1])
-            vars.cryptoList[pair]['high_risk'] = df['rsi'].iloc[-1] > 50
             print('Price Diff',vars.cryptoList[pair]['high_risk'],df['rsi'].iloc[-1])
             log.debug(f"{pair} Donchian values:{dc_low.iloc[-1]},{v[-2]},{v[-3]},{v[-4]}")
             long(pair,None,None,v[-1],df['Close'].iloc[-1])
             return
         if longDB is not None:
-            if df['rsi'].iloc[-2] >= 70:
-                vars.cryptoList[pair]['overbought'] = True
-            if vars.cryptoList[pair]['overbought']:
-                dc_low = ta.volatility.donchian_channel_lband(
-                    df['High'], df['Low'], df['Close'], window=6, offset=0, fillna=False)
             if df['Low'].iloc[-1] < dc_low.iloc[-2]:
-                vars.cryptoList[pair]['high_risk'] = False
                 log.debug(f"{pair} Stop loss: {df['Low'].iloc[-1]},{dc_low.iloc[-2]}")
                 orders.sell_long(longDB,df['Close'].iloc[-1])
                 return

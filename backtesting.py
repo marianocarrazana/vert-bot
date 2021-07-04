@@ -18,6 +18,7 @@ def test_dc(pair: str):
         Client.KLINE_INTERVAL_15MINUTE
     ]
     best = {'funds':0}
+    fees = 0.075
     for kline in kline_list:
         log.debug(f'Downloading data for {pair}[{kline}]...')
         try:
@@ -28,7 +29,8 @@ def test_dc(pair: str):
         log.debug('Proccesing data...')
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        for dc_period in range(1, 16):
+        for dc_period in range(1, 22):
+            sleep(0.1)
             for profit_val in range(10,11):
                 dc = ta.volatility.DonchianChannel(
                     df['High'], df['Low'], df['Open'], window=dc_period, offset=0, fillna=True)
@@ -36,7 +38,6 @@ def test_dc(pair: str):
                 penultimate = 0
                 funds = 100.00
                 purchase_price = None
-                fees = 0.075
                 for index, row in df.iterrows():
                     last = row['dc_low']
                     if penultimate == 0 or last == 0:
@@ -44,7 +45,7 @@ def test_dc(pair: str):
                         continue
                     price = backtest.get_price(row['Open'], row['Close']) 
                     if penultimate < last and purchase_price is None:
-                        purchase_price = row['Close']
+                        purchase_price = row['Close'] + (row['Close'] * (fees/100))
                     if purchase_price is not None:
                         if penultimate > last:
                             diff = backtest.get_change(price,purchase_price)
