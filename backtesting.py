@@ -12,7 +12,7 @@ import ta
 def test_dc(pair: str):
     date_range = "7 day ago UTC"
     kline_list = [
-        Client.KLINE_INTERVAL_1MINUTE,
+        # Client.KLINE_INTERVAL_1MINUTE,
         Client.KLINE_INTERVAL_3MINUTE,
         Client.KLINE_INTERVAL_5MINUTE,
         Client.KLINE_INTERVAL_15MINUTE

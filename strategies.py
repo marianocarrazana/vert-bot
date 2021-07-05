@@ -113,7 +113,7 @@ def long(pair, dataFrame, old_client, stop_loss, price_f):
     max_investment = float(os.environ.get('MAX_INVESTMENT') or 20)
     amount = balance if balance < max_investment else max_investment
     account_percent = 0.49
-    if utils.load('BTCUPUSDT') is not None and utils.load('BTCDOWNUSDT') is not None:
+    if utils.load('BTCUPUSDT') is not None or utils.load('BTCDOWNUSDT') is not None:
         account_percent = 0.96
     amount = (amount*account_percent) / price_f
     amount = D.from_float(amount).quantize(D(str(minimum)))
