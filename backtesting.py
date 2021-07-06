@@ -10,12 +10,14 @@ from lib import backtest
 import ta
 
 def test_dc(pair: str):
-    date_range = "7 day ago UTC"
+    date_range = "10 day ago UTC"
     kline_list = [
         # Client.KLINE_INTERVAL_1MINUTE,
-        Client.KLINE_INTERVAL_3MINUTE,
+        # Client.KLINE_INTERVAL_3MINUTE,
         Client.KLINE_INTERVAL_5MINUTE,
-        Client.KLINE_INTERVAL_15MINUTE
+        Client.KLINE_INTERVAL_15MINUTE,
+        Client.KLINE_INTERVAL_30MINUTE,
+        Client.KLINE_INTERVAL_1HOUR
     ]
     best = {'funds':0}
     fees = 0.075
