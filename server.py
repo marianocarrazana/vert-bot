@@ -110,7 +110,7 @@ if __name__ == "__main__":
     log.info(f"Tornado listening on http://localhost:{port}")
     tsks = ioloop.PeriodicCallback(backtesting.check, minutes(30))
     tsks.start() 
-    exam_crypto = ioloop.PeriodicCallback(strategies.donchian_btc, 6003)
+    exam_crypto = ioloop.PeriodicCallback(strategies.flawless, 9003)
     exam_crypto.start() 
     ioloop.IOLoop.current().spawn_callback(backtesting.check)
     # ioloop.IOLoop.current().spawn_callback(strategies.volume_check)

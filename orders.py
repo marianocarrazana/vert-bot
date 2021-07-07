@@ -13,13 +13,12 @@ if os.environ.get('SIMULATE_ORDERS') == 'True':
     simulate = True
     log.debug("Simulate orders ON")
 
-def market_buy(pair, amount, symbol_info, stop_loss, price):
+def market_buy(pair, amount, symbol_info, stop_loss, take_profit, price):
     if simulate:
         price = float(price)
-        profit = price * 1.003
         utils.save(pair,
                 {'pair':pair,'stop_loss':stop_loss,'qty':amount,
-                'profit':profit,'purchase_price':price})
+                'take_profit':take_profit,'purchase_price':price})
         return
     try:
         order = client.order_market_buy(
@@ -37,12 +36,11 @@ def market_buy(pair, amount, symbol_info, stop_loss, price):
         log.debug(f"order_buy:{order}")
         if order['status'] == 'FILLED':
             price = float(order['fills'][0]['price'])
-            profit = price * 1.003
             #stop_loss = price-diff
             log.debug(f"price:{price} stop_loss:{stop_loss}")
             utils.save(pair,
                 {'pair':pair,'stop_loss':stop_loss,'qty':order['executedQty'],
-                'profit':profit,'purchase_price':price})
+                'take_profit':take_profit,'purchase_price':price})
             break
         time.sleep(1)
         order = client.get_order(symbol=pair,orderId=order['orderId'])

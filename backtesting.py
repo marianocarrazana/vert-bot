@@ -48,6 +48,7 @@ def test_flawless(pair: str):
         for sl in range(10,101):
             stop_loss_percent = sl / 10
             for tp in range(4,60):
+                sleep(0.1)
                 take_profit_percent = tp / 10
                 funds = 100.0
                 purchase_price = None
