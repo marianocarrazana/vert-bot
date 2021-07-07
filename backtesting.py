@@ -9,11 +9,115 @@ from binance.exceptions import BinanceAPIException, BinanceOrderException
 from lib import backtest
 import ta
 
+def test_flawless(pair: str):
+    date_range = "5 day ago UTC"
+    kline_list = [
+        # Client.KLINE_INTERVAL_1MINUTE,
+        Client.KLINE_INTERVAL_3MINUTE,
+        Client.KLINE_INTERVAL_5MINUTE,
+        Client.KLINE_INTERVAL_15MINUTE,
+        Client.KLINE_INTERVAL_30MINUTE,
+        #Client.KLINE_INTERVAL_1HOUR
+    ]
+    best = {'funds':0}
+    fees = 0.1
+    for kline in kline_list:
+        log.debug(f'Downloading data for {pair}[{kline}]...')
+        try:
+            bars = vars.client.get_historical_klines(pair.upper(), kline, date_range)
+        except BinanceAPIException as e:
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+            return None
+        log.debug('Proccesing data...')
+        df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
+        df = utils.candleStringsToNumbers(df)
+        utils.calculateRSI(df,14)
+        indicator_bb1 = ta.volatility.BollingerBands(
+            close=df["Close"], window=20, window_dev=1.0)
+        df['upper1'] = indicator_bb1.bollinger_hband()
+        df['lower1'] = indicator_bb1.bollinger_lband()
+        indicator_bb2 = ta.volatility.BollingerBands(
+            close=df["Close"], window=17, window_dev=1.0)
+        df['upper2'] = indicator_bb2.bollinger_hband()
+        df['lower2'] = indicator_bb2.bollinger_lband()
+        RSILowerLevel1 = 42
+        RSIUpperLevel1 = 70
+        RSILowerLevel2 = 42
+        RSIUpperLevel2 = 76
+        best = {'funds':0}
+        for sl in range(10,101):
+            stop_loss_percent = sl / 10
+            for tp in range(4,60):
+                take_profit_percent = tp / 10
+                funds = 100.0
+                purchase_price = None
+                take_profit = None
+                stop_loss = None
+                for index, row in df.iterrows():
+                    if take_profit is not None and stop_loss is not None:
+                        if row['High'] > take_profit:
+                            diff = backtest.get_change(take_profit,purchase_price)
+                            funds = backtest.get_funds(funds, diff, fees)
+                            purchase_price = None
+                            take_profit = None
+                            stop_loss = None
+                            continue
+                        elif row['Low'] < stop_loss:
+                            diff = backtest.get_change(stop_loss,purchase_price)
+                            funds = backtest.get_funds(funds, diff, fees)
+                            purchase_price = None
+                            take_profit = None
+                            stop_loss = None
+                            continue
+                    #triggers 1
+                    BBBuyTrigger1 = row['Open'] < row['lower1']
+                    BBSellTrigger1 = row['Open'] > row['upper1']
+                    rsiBuyGuard1 = row['rsi'] > RSILowerLevel1
+                    rsiSellGuard1 = row['rsi'] > RSIUpperLevel1
+
+                    if purchase_price is None:
+                        if BBBuyTrigger1 and rsiBuyGuard1:
+                            purchase_price = row['Open'] + (row['Open'] * (fees/100))
+                            take_profit = None
+                            stop_loss = None
+                            continue
+                    else:
+                        if BBSellTrigger1 and rsiSellGuard1:
+                            diff = backtest.get_change(row['Open'],purchase_price)
+                            funds = backtest.get_funds(funds, diff, fees)
+                            purchase_price = None
+                            take_profit = None
+                            stop_loss = None
+                            continue
+                    #triggers 2
+                    BBBuyTrigger2 = row['Open'] < row['lower2']
+                    BBSellTrigger2 = row['Open'] > row['upper2']
+                    rsiBuyGuard2 = row['rsi'] > RSILowerLevel2
+                    rsiSellGuard2 = row['rsi'] > RSIUpperLevel2
+
+                    if purchase_price is None:
+                        if BBBuyTrigger2 and rsiBuyGuard2:
+                            purchase_price = row['Open'] + (row['Open'] * (fees/100))
+                            take_profit = purchase_price + (purchase_price*(take_profit_percent/100))
+                            stop_loss = purchase_price - (purchase_price*(stop_loss_percent/100))
+                    else:
+                        if BBSellTrigger2 and rsiSellGuard2:
+                            diff = backtest.get_change(row['Open'],purchase_price)
+                            funds = backtest.get_funds(funds, diff, fees)
+                            purchase_price = None
+                            take_profit = None
+                            stop_loss = None
+                            continue
+                if funds > best['funds']:
+                    best = {'funds':funds,'profit':funds-100.0,'kline_time':kline,'stop_loss':stop_loss_percent,'take_profit':take_profit_percent}
+                print('Funds:',funds,'stop_loss:',stop_loss_percent,'take_profit:',take_profit_percent)
+    return best
+
 def test_dc(pair: str):
     date_range = "10 day ago UTC"
     kline_list = [
         # Client.KLINE_INTERVAL_1MINUTE,
-        # Client.KLINE_INTERVAL_3MINUTE,
+        Client.KLINE_INTERVAL_3MINUTE,
         Client.KLINE_INTERVAL_5MINUTE,
         Client.KLINE_INTERVAL_15MINUTE,
         Client.KLINE_INTERVAL_30MINUTE,
@@ -110,26 +214,26 @@ def load_data():
     now = datetime.datetime.now()
     data = {'last_check':now.day}
     for pair in vars.cryptoList:
-        get_data = test_dc(pair)
+        get_data = test_flawless(pair)
         if get_data is not None:
             data[pair] = get_data
-            vars.cryptoList[pair]['best_dc'] = get_data
+            vars.cryptoList[pair]['best_flawless'] = get_data
         else:
             return
-    utils.save('best_dc',data)
+    utils.save('best_flawless',data)
     utils.telegramMsg(f"{data}")
 
 def check():
-    best_dc = utils.load('best_dc')
-    if best_dc is None:
+    best_flawless = utils.load('best_flawless')
+    if best_flawless is None:
         load_data()
     else:
         now = datetime.datetime.now()
-        if best_dc['last_check'] != now.day and now.hour > 3:
+        if best_flawless['last_check'] != now.day and now.hour > 3:
             load_data()
         else:
             for pair in vars.cryptoList:
-                vars.cryptoList[pair]['best_dc'] = best_dc[pair]
+                vars.cryptoList[pair]['best_flawless'] = best_flawless[pair]
 
 if __name__ == "__main__":
     check()

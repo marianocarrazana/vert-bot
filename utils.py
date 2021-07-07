@@ -6,6 +6,7 @@ import pandas as pd
 from tinydb import TinyDB, Query
 from logger import log
 from vars import client
+from math import sqrt
 
 CANDLES_NAMES = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'closetime',
                  'quoteasset', 'numbertrades', 'takerbaseasset', 'takerquoteasset', 'ignore']
@@ -38,9 +39,9 @@ def plot(dt):
     # fplt.show()
 
 
-def calculateBB(dataFrame):
+def calculateBB(dataFrame,period=21,mult=2.0):
     indicator_bb = ta.volatility.BollingerBands(
-        close=dataFrame["Close"], window=21, window_dev=2)
+        close=dataFrame["Close"], window=period, window_dev=mult)
     dataFrame['bb_h'] = indicator_bb.bollinger_hband()
     dataFrame['bb_ma'] = indicator_bb.bollinger_mavg()
     dataFrame['bb_l'] = indicator_bb.bollinger_lband()
@@ -77,6 +78,48 @@ def calculate_supertrend(data_frame,atr_period=9,atr_multiplier=3.0):
         elif trend == 1 and row['Close'] < up1:
             trend = -1
         data_frame.loc[index,'st'] = trend
+
+def calculate_rma(data_frame, length: int):
+    empty_arr = [0] * len(data_frame)
+    data_frame['rma'] = empty_arr
+    alpha = 1/length
+    indicator = ta.trend.SMAIndicator(
+        close=data_frame['Open'], window=length, fillna=True)
+    data_frame['sma'] = indicator.sma_indicator()
+    for index, row in data_frame.iterrows():
+        if index == 0:
+            data_frame.loc[index,'rma'] = row['sma']
+            continue
+        data_frame.loc[index,'rma'] = alpha * row['Open'] + (1 - alpha) * data_frame['rma'].loc[index-1]
+
+def calculate_stdev(data_frame, length: int, df_name = 'stdev'):
+    empty_arr = [0] * len(data_frame)
+    data_frame[df_name] = empty_arr
+    indicator = ta.trend.SMAIndicator(
+        close=data_frame['Open'], window=length, fillna=True)
+    data_frame['sma'] = indicator.sma_indicator()
+    for index, row in data_frame.iterrows():
+        if index < length:
+            data_frame.loc[index,df_name] = 0.0
+            continue
+        sumOfSquareDeviations = 0.0
+        for i in range(0,length):
+            sum1 = SUM(data_frame['Open'].loc[index - i], -row['sma'])
+            sumOfSquareDeviations = sumOfSquareDeviations + sum1 * sum1
+        data_frame.loc[index,df_name] = sqrt(sumOfSquareDeviations / length)
+
+def isZero(val,eps): return abs(val) <= eps
+
+def SUM(fst, snd):
+    eps = 1e-10
+    res = fst + snd
+    if isZero(res, eps):
+        return 0
+    else:
+        if not isZero(res, 1e-4):
+            return res
+        else:
+            return 15
 
 def telegramMsg(message,error=False):
     #log.debug(f"Sending message:{message}")
