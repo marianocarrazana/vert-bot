@@ -16,7 +16,7 @@ def test_flawless(pair: str):
         Client.KLINE_INTERVAL_3MINUTE,
         Client.KLINE_INTERVAL_5MINUTE,
         Client.KLINE_INTERVAL_15MINUTE,
-        Client.KLINE_INTERVAL_30MINUTE,
+        # Client.KLINE_INTERVAL_30MINUTE,
         #Client.KLINE_INTERVAL_1HOUR
     ]
     best = {'funds':0}
@@ -44,11 +44,10 @@ def test_flawless(pair: str):
         RSIUpperLevel1 = 70
         RSILowerLevel2 = 42
         RSIUpperLevel2 = 76
-        best = {'funds':0}
         for sl in range(10,101):
             stop_loss_percent = sl / 10
             for tp in range(4,60):
-                sleep(0.1)
+                sleep(0.07)
                 take_profit_percent = tp / 10
                 funds = 100.0
                 purchase_price = None
@@ -111,7 +110,7 @@ def test_flawless(pair: str):
                             continue
                 if funds > best['funds']:
                     best = {'funds':funds,'profit':funds-100.0,'kline_time':kline,'stop_loss':stop_loss_percent,'take_profit':take_profit_percent}
-                print('Funds:',funds,'stop_loss:',stop_loss_percent,'take_profit:',take_profit_percent)
+                #print('Funds:',funds,'stop_loss:',stop_loss_percent,'take_profit:',take_profit_percent)
     return best
 
 def test_dc(pair: str):
