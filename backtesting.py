@@ -178,7 +178,6 @@ def test_rsi(pair: str):
     df = utils.candleStringsToNumbers(df)
     best = {'funds':0}
     for rsi_period in range(5, 18):
-        #log.debug(f'Testing with period {rsi_period}')
         utils.calculateRSI(df,rsi_period)
         for i in range(20,71):
             sleep(0.1)

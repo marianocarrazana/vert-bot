@@ -17,7 +17,6 @@ import orders
 from tradingview_ta import Interval
 
 def flawless():
-    print('test')
     for pair in vars.cryptoList:
         if 'best_flawless' not in vars.cryptoList[pair].keys():
             return
