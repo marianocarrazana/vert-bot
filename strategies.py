@@ -17,10 +17,11 @@ import orders
 from tradingview_ta import Interval
 
 def flawless():
+    print('test')
     for pair in vars.cryptoList:
-        best_flawless = vars.cryptoList[pair]['best_flawless']
-        if best_flawless is None:
+        if 'best_flawless' not in vars.cryptoList[pair].keys():
             return
+        best_flawless = vars.cryptoList[pair]['best_flawless']
         longDB = utils.load(pair)
         try:
             bars = client.get_klines(symbol=pair, interval=best_flawless['kline_time'], limit=150)
@@ -40,16 +41,12 @@ def flawless():
             close=df["Close"], window=17, window_dev=1.0)
         df['upper2'] = indicator_bb2.bollinger_hband()
         df['lower2'] = indicator_bb2.bollinger_lband()
-        RSILowerLevel1 = 42
-        RSIUpperLevel1 = 70
-        RSILowerLevel2 = 42
-        RSIUpperLevel2 = 76
         price = df['Close'].iloc[-1]
         if longDB is None:
             BBBuyTrigger1 = price < df['lower1'].iloc[-1]
-            rsiBuyGuard1 = df['rsi'].iloc[-1] > RSILowerLevel1
+            rsiBuyGuard1 = df['rsi'].iloc[-1] > 42
             BBBuyTrigger2 = price < df['lower2'].iloc[-1]
-            rsiBuyGuard2 = df['rsi'].iloc[-1] > RSILowerLevel2
+            rsiBuyGuard2 = df['rsi'].iloc[-1] > 42
             
             if (BBBuyTrigger1 and rsiBuyGuard1) or (BBBuyTrigger2 and rsiBuyGuard2):
                 now = time.time()
@@ -57,15 +54,15 @@ def flawless():
                 if time_diff < 60*4:
                     continue
                 stop_loss = price - (price * (best_flawless['stop_loss']/100))
-                take_profit = price - (price * (best_flawless['take_profit']/100))
+                take_profit = price + (price * (best_flawless['take_profit']/100))
                 vars.cryptoList[pair]['last_buy'] = now
                 long(pair,price,take_profit,stop_loss)
                 return
         else:
             BBSellTrigger1 = price > df['upper1'].iloc[-1]
-            rsiSellGuard1 = df['rsi'].iloc[-1] > RSIUpperLevel1
+            rsiSellGuard1 = df['rsi'].iloc[-1] > 70
             BBSellTrigger2 = price > df['upper2'].iloc[-1]
-            rsiSellGuard2 = df['rsi'].iloc[-1] > RSIUpperLevel2
+            rsiSellGuard2 = df['rsi'].iloc[-1] > 76
             stop = price <= longDB['stop_loss'] or price >= longDB['take_profit']
             if (BBSellTrigger1 and rsiSellGuard1) or (BBSellTrigger2 and rsiSellGuard2) or stop:
                 orders.sell_long(longDB,price)

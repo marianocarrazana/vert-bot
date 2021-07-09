@@ -112,6 +112,6 @@ if __name__ == "__main__":
     tsks.start() 
     exam_crypto = ioloop.PeriodicCallback(strategies.flawless, 9003)
     exam_crypto.start() 
-    ioloop.IOLoop.current().spawn_callback(backtesting.check)
+    ioloop.IOLoop.current().spawn_callback(backtesting.run_background)
     # ioloop.IOLoop.current().spawn_callback(strategies.volume_check)
     ioloop.IOLoop.current().start()#run forever

@@ -8,6 +8,7 @@ import datetime
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 from lib import backtest
 import ta
+import threading
 
 def test_flawless(pair: str):
     date_range = "5 day ago UTC"
@@ -234,6 +235,10 @@ def check():
         else:
             for pair in vars.cryptoList:
                 vars.cryptoList[pair]['best_flawless'] = best_flawless[pair]
+
+def run_background():
+    back_thread = threading.Thread(target=check)
+    back_thread.start()
 
 if __name__ == "__main__":
     check()
