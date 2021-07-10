@@ -39,7 +39,7 @@ def plot(dt):
     # fplt.show()
 
 def calculate_aroon(data_frame,period=14):
-    indicator = ta.trend.AroonIndicator(close=data_frame['Close'],window=period)
+    indicator = ta.trend.AroonIndicator(close=data_frame['Open'],window=period)
     data_frame['aroon_down'] = indicator.aroon_down()
     data_frame['aroon_up'] = indicator.aroon_up()
 
