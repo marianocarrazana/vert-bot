@@ -16,6 +16,44 @@ import vars
 import orders
 from tradingview_ta import Interval
 
+def aroon():
+    for pair in vars.cryptoList:
+        if 'best_aroon' not in vars.cryptoList[pair].keys():
+            return
+        best_aroon = vars.cryptoList[pair]['best_aroon']
+        longDB = utils.load(pair)
+        try:
+            bars3 = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=150)
+            time.sleep(1)
+            bars15 = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_15MINUTE, limit=150)
+        except BinanceAPIException as e:
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+            return
+        df3 = pd.DataFrame(bars3, columns=utils.CANDLES_NAMES)
+        df3 = utils.candleStringsToNumbers(df3)
+        df3.set_index('Date', inplace=True)
+        df15 = pd.DataFrame(bars15, columns=utils.CANDLES_NAMES)
+        df15 = utils.candleStringsToNumbers(df15)
+        utils.calculate_aroon(df3,best_aroon['aroon_period'])
+        utils.calculate_aroon(df15,best_aroon['aroon_period'])
+        price = df3['Close'].iloc[-1]
+        row3 = df3.iloc[-1]
+        row15 = df15.iloc[-1]
+        if longDB is None:
+            if row3['aroon_up'] < 20 and row3['aroon_down'] > 80 and row15['aroon_up'] < 20 and row15['aroon_down'] > 80:
+                now = time.time()
+                time_diff = now - vars.cryptoList[pair]['last_buy']
+                if time_diff < 60*4:
+                    continue
+                vars.cryptoList[pair]['last_buy'] = now
+                long(pair,price)
+                return
+        else:
+            if row15['aroon_up'] > 80 and row15['aroon_down'] < 20:
+                orders.sell_long(longDB,price)
+                return
+        time.sleep(1)
+
 def flawless():
     for pair in vars.cryptoList:
         if 'best_flawless' not in vars.cryptoList[pair].keys():

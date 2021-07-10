@@ -38,6 +38,10 @@ def plot(dt):
     # fplt.add_band(25, 75, ax=ax)
     # fplt.show()
 
+def calculate_aroon(data_frame,period=14):
+    indicator = ta.trend.AroonIndicator(close=data_frame['Close'],window=period)
+    data_frame['aroon_down'] = indicator.aroon_down()
+    data_frame['aroon_up'] = indicator.aroon_up()
 
 def calculateBB(dataFrame,period=21,mult=2.0):
     indicator_bb = ta.volatility.BollingerBands(

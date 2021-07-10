@@ -10,6 +10,48 @@ from lib import backtest
 import ta
 import threading
 
+def test_aroon(pair:str):
+    date_range = "5 day ago UTC"
+    try:
+        log.debug(f'Downloading data for {pair}[3m]...')
+        bars3 = vars.client.get_historical_klines(pair.upper(), Client.KLINE_INTERVAL_3MINUTE, date_range)
+        sleep(1)
+        log.debug(f'Downloading data for {pair}[15m]...')
+        bars15 = vars.client.get_historical_klines(pair.upper(), Client.KLINE_INTERVAL_15MINUTE, date_range)
+    except BinanceAPIException as e:
+        log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+        return None
+    log.debug('Proccesing data...')
+    df3 = pd.DataFrame(bars3, columns=utils.CANDLES_NAMES)
+    df3 = utils.candleStringsToNumbers(df3)
+    df3.set_index('Date', inplace=True)
+    df15 = pd.DataFrame(bars15, columns=utils.CANDLES_NAMES)
+    df15 = utils.candleStringsToNumbers(df15)
+    best = {'funds':0}
+    fees = 0.075
+    for aroon_period in range(6,30):
+        sleep(0.1)
+        utils.calculate_aroon(df3,aroon_period)
+        utils.calculate_aroon(df15,aroon_period)
+        funds = 100.0
+        purchase_price = None
+        for index, row15 in df15.iterrows():
+            row3 = df3.loc[row15['Date']]
+            if purchase_price is None:
+                if row3['aroon_up'] < 20 and row3['aroon_down'] > 80 and row15['aroon_up'] < 20 and row15['aroon_down'] > 80:
+                    purchase_price = row3['Open'] + (row3['Open'] * (fees/100))
+                    continue
+            else:
+                if row15['aroon_up'] > 80 and row15['aroon_down'] < 20:
+                    diff = backtest.get_change(row3['Open'],purchase_price)
+                    funds = backtest.get_funds(funds, diff, fees)
+                    purchase_price = None
+                    continue
+        if funds > best['funds']:
+            best = {'funds':funds,'profit':funds-100.0,'aroon_period':aroon_period}
+        #print(funds,aroon_period)
+    return best
+
 def test_flawless(pair: str):
     date_range = "5 day ago UTC"
     kline_list = [
@@ -214,26 +256,26 @@ def load_data():
     now = datetime.datetime.now()
     data = {'last_check':now.day}
     for pair in vars.cryptoList:
-        get_data = test_flawless(pair)
+        get_data = test_aroon(pair)
         if get_data is not None:
             data[pair] = get_data
-            vars.cryptoList[pair]['best_flawless'] = get_data
+            vars.cryptoList[pair]['best_aroon'] = get_data
         else:
             return
-    utils.save('best_flawless',data)
+    utils.save('best_aroon',data)
     utils.telegramMsg(f"{data}")
 
 def check():
-    best_flawless = utils.load('best_flawless')
-    if best_flawless is None:
+    best_aroon = utils.load('best_aroon')
+    if best_aroon is None:
         load_data()
     else:
         now = datetime.datetime.now()
-        if best_flawless['last_check'] != now.day and now.hour > 3:
+        if best_aroon['last_check'] != now.day and now.hour > 3:
             load_data()
         else:
             for pair in vars.cryptoList:
-                vars.cryptoList[pair]['best_flawless'] = best_flawless[pair]
+                vars.cryptoList[pair]['best_aroon'] = best_aroon[pair]
 
 def run_background():
     back_thread = threading.Thread(target=check)
