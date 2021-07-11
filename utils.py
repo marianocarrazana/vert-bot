@@ -39,9 +39,17 @@ def plot(dt):
     # fplt.show()
 
 def calculate_aroon(data_frame,period=14):
-    indicator = ta.trend.AroonIndicator(close=data_frame['Open'],window=period)
-    data_frame['aroon_down'] = indicator.aroon_down()
-    data_frame['aroon_up'] = indicator.aroon_up()
+    empty_arr = [0] * len(data_frame)
+    data_frame['aroon_down'] = empty_arr
+    data_frame['aroon_up'] = empty_arr
+    for index, row in data_frame.iterrows():
+        if index < period:
+            data_frame.loc[index,'aroon_down'] = 50
+            data_frame.loc[index,'aroon_up'] = 50
+            continue
+        sticks = data_frame.iloc[index-period:index]
+        data_frame.loc[index,'aroon_down'] = 100 * (index - sticks['High'].idxmax())/period
+        data_frame.loc[index,'aroon_up'] = 100 * (index - sticks['Low'].idxmin())/period
 
 def calculateBB(dataFrame,period=21,mult=2.0):
     indicator_bb = ta.volatility.BollingerBands(

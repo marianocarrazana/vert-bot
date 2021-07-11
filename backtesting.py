@@ -22,16 +22,16 @@ def test_aroon(pair:str):
         log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
         return None
     log.debug('Proccesing data...')
-    df3 = pd.DataFrame(bars3, columns=utils.CANDLES_NAMES)
-    df3 = utils.candleStringsToNumbers(df3)
-    df3.set_index('Date', inplace=True)
     df15 = pd.DataFrame(bars15, columns=utils.CANDLES_NAMES)
     df15 = utils.candleStringsToNumbers(df15)
     best = {'funds':0}
     fees = 0.075
     for aroon_period in range(6,30):
         sleep(0.1)
+        df3 = pd.DataFrame(bars3, columns=utils.CANDLES_NAMES)
+        df3 = utils.candleStringsToNumbers(df3)
         utils.calculate_aroon(df3,aroon_period)
+        df3.set_index('Date', inplace=True)
         utils.calculate_aroon(df15,aroon_period)
         funds = 100.0
         purchase_price = None

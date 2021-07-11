@@ -31,7 +31,6 @@ def aroon():
             return
         df3 = pd.DataFrame(bars3, columns=utils.CANDLES_NAMES)
         df3 = utils.candleStringsToNumbers(df3)
-        df3.set_index('Date', inplace=True)
         df15 = pd.DataFrame(bars15, columns=utils.CANDLES_NAMES)
         df15 = utils.candleStringsToNumbers(df15)
         utils.calculate_aroon(df3,best_aroon['aroon_period'])
@@ -39,6 +38,7 @@ def aroon():
         price = df3['Close'].iloc[-1]
         row3 = df3.iloc[-1]
         row15 = df15.iloc[-1]
+        #print(row3['aroon_up'], row3['aroon_down'], pair)
         if longDB is None:
             if row3['aroon_up'] < 20 and row3['aroon_down'] > 80 and row15['aroon_up'] < 20 and row15['aroon_down'] > 80:
                 now = time.time()
