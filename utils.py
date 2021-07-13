@@ -39,23 +39,16 @@ def plot(dt):
     # fplt.show()
 
 def calculate_aroon(data_frame,period=14):
-    indicatorHigh = ta.trend.AroonIndicator(
-        close=data_frame['High'], window=period, fillna=True)
-    indicatorLow = ta.trend.AroonIndicator(
-        close=data_frame['Low'], window=period, fillna=True)
-    data_frame['aroon_down'] = indicatorLow.aroon_down()
-    data_frame['aroon_up'] = indicatorHigh.aroon_up()
-    # empty_arr = [0] * len(data_frame)
-    # data_frame['aroon_down'] = empty_arr
-    # data_frame['aroon_up'] = empty_arr
-    # for index, row in data_frame.iterrows():
-    #     if index < period:
-    #         data_frame.loc[index,'aroon_down'] = 50
-    #         data_frame.loc[index,'aroon_up'] = 50
-    #         continue
-    #     sticks = data_frame.iloc[index-period:index]
-    #     data_frame.loc[index,'aroon_down'] = 100 * (index - sticks['High'].idxmax())/period
-    #     data_frame.loc[index,'aroon_up'] = 100 * (index - sticks['Low'].idxmin())/period
+    data_frame['aroon_up'] = aroon_up(data_frame['High'],period)
+    data_frame['aroon_down'] = aroon_down(data_frame['Low'],period)
+
+def aroon_up(series,period=14):
+    up = 100 * series.rolling(period+1).apply(lambda x: x.argmax()) / period
+    return up
+
+def aroon_down(series,period=14):
+    down = 100 * series.rolling(period+1).apply(lambda x: x.argmin()) / period
+    return down
 
 def calculateBB(dataFrame,period=21,mult=2.0):
     indicator_bb = ta.volatility.BollingerBands(
