@@ -48,7 +48,7 @@ def aroon():
                 vars.cryptoList[pair]['last_buy'] = now
                 long(pair,price)
                 return
-        else:
+        if longDB is not None:
             if row15['aroon_up'] > 80 and row15['aroon_down'] < 20:
                 orders.sell_long(longDB,price)
                 return
