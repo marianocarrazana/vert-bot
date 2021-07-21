@@ -38,7 +38,8 @@ def aroon():
         price = df3['Close'].iloc[-1]
         row3 = df3.iloc[-1]
         row15 = df15.iloc[-1]
-        #print('up:', row3['aroon_up'],'down', row3['aroon_down'], pair)
+        # print('up:', row3['aroon_up'],'down', row3['aroon_down'], pair,'3m')
+        # print('up:', row15['aroon_up'],'down', row15['aroon_down'], pair,'15m')
         if longDB is None:
             if row3['aroon_up'] < 20 and row3['aroon_down'] > 80 and row15['aroon_up'] < 20 and row15['aroon_down'] > 80:
                 now = time.time()

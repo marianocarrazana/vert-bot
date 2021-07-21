@@ -7,6 +7,7 @@ from tinydb import TinyDB, Query
 from logger import log
 from vars import client
 from math import sqrt
+import pandas_ta as pta
 
 CANDLES_NAMES = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'closetime',
                  'quoteasset', 'numbertrades', 'takerbaseasset', 'takerquoteasset', 'ignore']
@@ -39,8 +40,9 @@ def plot(dt):
     # fplt.show()
 
 def calculate_aroon(data_frame,period=14):
-    data_frame['aroon_up'] = aroon_up(data_frame['High'],period)
-    data_frame['aroon_down'] = aroon_down(data_frame['Low'],period)
+    a = pta.aroon(data_frame['High'],data_frame['Low'],length=period)
+    data_frame['aroon_up'] = a['AROONU_' + str(period)]
+    data_frame['aroon_down'] = a['AROOND_' + str(period)]
 
 def aroon_up(series,period=14):
     up = 100 * series.rolling(period+1).apply(lambda x: x.argmax()) / period
