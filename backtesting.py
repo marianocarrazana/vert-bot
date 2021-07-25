@@ -10,7 +10,50 @@ from lib import backtest
 import ta
 import threading
 
-def test_aroon(pair:str):
+def test_aroon(pair: str):
+    date_range = "5 day ago UTC"
+    kline_list = [
+        # Client.KLINE_INTERVAL_1MINUTE,
+        # Client.KLINE_INTERVAL_3MINUTE,
+        Client.KLINE_INTERVAL_5MINUTE,
+        # Client.KLINE_INTERVAL_15MINUTE,
+        # Client.KLINE_INTERVAL_30MINUTE,
+        # Client.KLINE_INTERVAL_1HOUR
+    ]
+    best = {'funds':0}
+    fees = 0.075
+    for kline in kline_list:
+        log.debug(f'Downloading data for {pair}[{kline}]...')
+        try:
+            bars = vars.client.get_historical_klines(pair.upper(), kline, date_range)
+        except BinanceAPIException as e:
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+            return None
+        log.debug('Proccesing data...')
+        df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
+        df = utils.candleStringsToNumbers(df)
+        for aroon_period in range(5, 30):
+            utils.calculate_aroon(df,aroon_period)
+            for bottom in range(-80, -59):
+                for top in range(60,81):
+                    sleep(0.1)
+                    funds = 100.0
+                    purchase_price = None
+                    for index, row in df.iterrows():
+                        price = backtest.get_price(row['Open'], row['Close']) 
+                        if row['aroon_osc'] <= bottom and purchase_price is None:
+                                purchase_price = row['Close'] + (row['Close'] * (fees/100))
+                        if purchase_price is not None:
+                            if row['aroon_osc'] >= top:
+                                diff = backtest.get_change(price,purchase_price)
+                                funds = backtest.get_funds(funds, diff, fees)
+                                purchase_price = None
+                    if funds > best['funds']:
+                        best = {'funds':funds,'aroon_period':aroon_period,'profit':funds-100.0,'top':top,'bottom':bottom}
+                    print('Funds:',funds,'Period DC:',aroon_period,top,bottom)
+    return best
+
+def test_aroon_multi(pair:str):
     date_range = "5 day ago UTC"
     try:
         log.debug(f'Downloading data for {pair}[3m]...')

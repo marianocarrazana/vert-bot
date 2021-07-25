@@ -43,14 +43,15 @@ def calculate_aroon(data_frame,period=14):
     a = pta.aroon(data_frame['High'],data_frame['Low'],length=period)
     data_frame['aroon_up'] = a['AROONU_' + str(period)]
     data_frame['aroon_down'] = a['AROOND_' + str(period)]
+    data_frame['aroon_osc'] = a['AROONOSC_' + str(period)]
 
-def aroon_up(series,period=14):
-    up = 100 * series.rolling(period+1).apply(lambda x: x.argmax()) / period
-    return up
+# def aroon_up(series,period=14):
+#     up = 100 * series.rolling(period+1).apply(lambda x: x.argmax()) / period
+#     return up
 
-def aroon_down(series,period=14):
-    down = 100 * series.rolling(period+1).apply(lambda x: x.argmin()) / period
-    return down
+# def aroon_down(series,period=14):
+#     down = 100 * series.rolling(period+1).apply(lambda x: x.argmin()) / period
+#     return down
 
 def calculateBB(dataFrame,period=21,mult=2.0):
     indicator_bb = ta.volatility.BollingerBands(

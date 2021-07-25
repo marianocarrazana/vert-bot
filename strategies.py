@@ -14,13 +14,45 @@ from random import random
 from vars import client
 import vars
 import orders
-from tradingview_ta import Interval
 
 def aroon():
     for pair in vars.cryptoList:
         if 'best_aroon' not in vars.cryptoList[pair].keys():
             return
         best_aroon = vars.cryptoList[pair]['best_aroon']
+        longDB = utils.load(pair)
+        try:
+            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=150)
+        except BinanceAPIException as e:
+            log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
+            return
+        df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
+        df = utils.candleStringsToNumbers(df)
+        utils.calculate_aroon(df,best_aroon['aroon_period'])
+        price = df['Close'].iloc[-1]
+        row = df.iloc[-1]
+        top = best_aroon['top']
+        bottom = best_aroon['bottom']
+        if longDB is None:
+            if row['aroon_osc'] <= bottom:
+                now = time.time()
+                time_diff = now - vars.cryptoList[pair]['last_buy']
+                if time_diff < 60*4:
+                    continue
+                vars.cryptoList[pair]['last_buy'] = now
+                long(pair,price)
+                return
+        if longDB is not None:
+            if row['aroon_osc'] >= top:
+                orders.sell_long(longDB,price)
+                return
+        time.sleep(1)
+
+def aroon_multi():
+    for pair in vars.cryptoList:
+        if 'best_aroon_multi' not in vars.cryptoList[pair].keys():
+            return
+        best_aroon = vars.cryptoList[pair]['best_aroon_multi']
         longDB = utils.load(pair)
         try:
             bars3 = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=150)
