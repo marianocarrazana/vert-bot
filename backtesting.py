@@ -16,7 +16,7 @@ def test_aroon(pair: str):
         # Client.KLINE_INTERVAL_1MINUTE,
         # Client.KLINE_INTERVAL_3MINUTE,
         Client.KLINE_INTERVAL_5MINUTE,
-        # Client.KLINE_INTERVAL_15MINUTE,
+        Client.KLINE_INTERVAL_15MINUTE,
         # Client.KLINE_INTERVAL_30MINUTE,
         # Client.KLINE_INTERVAL_1HOUR
     ]
@@ -49,8 +49,8 @@ def test_aroon(pair: str):
                                 funds = backtest.get_funds(funds, diff, fees)
                                 purchase_price = None
                     if funds > best['funds']:
-                        best = {'funds':funds,'aroon_period':aroon_period,'profit':funds-100.0,'top':top,'bottom':bottom}
-                    print('Funds:',funds,'Period DC:',aroon_period,top,bottom)
+                        best = {'funds':funds,'aroon_period':aroon_period,'profit':funds-100.0,'top':top,'bottom':bottom,'kline_time':kline}
+                    # print('Funds:',funds,'Period DC:',aroon_period,top,bottom)
     return best
 
 def test_aroon_multi(pair:str):

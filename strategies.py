@@ -22,7 +22,7 @@ def aroon():
         best_aroon = vars.cryptoList[pair]['best_aroon']
         longDB = utils.load(pair)
         try:
-            bars = client.get_klines(symbol=pair, interval=client.KLINE_INTERVAL_3MINUTE, limit=150)
+            bars = client.get_klines(symbol=pair, interval=best_aroon['kline_time'], limit=150)
         except BinanceAPIException as e:
             log.error(f"status_code:{e.status_code}\nmessage:{e.message}")
             return
@@ -34,6 +34,7 @@ def aroon():
         top = best_aroon['top']
         bottom = best_aroon['bottom']
         if longDB is None:
+            print(row['aroon_osc'],bottom)
             if row['aroon_osc'] <= bottom:
                 now = time.time()
                 time_diff = now - vars.cryptoList[pair]['last_buy']
