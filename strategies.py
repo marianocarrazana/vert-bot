@@ -230,12 +230,15 @@ def long(pair:str, price_f:float,take_profit:float = None, stop_loss:float = Non
     #profit = row['Close'] + diff
     #win_percent = (diff / (row['Close'] / 100))/100
     # if win_percent > 0.005:#0.5%
-    balance = float(client.get_asset_balance(asset='USDT')['free'])
-    max_investment = float(os.environ.get('MAX_INVESTMENT') or 20)
+    if os.environ.get('SIMULATE_ORDERS') == 'True':
+        balance = 100.0
+    else:
+        balance = float(client.get_asset_balance(asset='EUR')['free'])
+    max_investment = float(os.environ.get('MAX_INVESTMENT') or 20.0)
     amount = balance if balance < max_investment else max_investment
-    account_percent = 0.49
-    if utils.load('BTCUPUSDT') is not None or utils.load('BTCDOWNUSDT') is not None:
-        account_percent = 0.96
+    account_percent = 0.95
+    # if utils.load('BTCUPUSDT') is not None or utils.load('BTCDOWNUSDT') is not None:
+    #     account_percent = 0.96
     amount = (amount*account_percent) / price_f
     amount = D.from_float(amount).quantize(D(str(minimum)))
     amount = round_step_size(amount, step_size)
