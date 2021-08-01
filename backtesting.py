@@ -319,8 +319,12 @@ def check():
         else:
             for pair in vars.cryptoList:
                 vars.cryptoList[pair]['best_aroon'] = best_aroon[pair]
+    vars.running_backtesting = False
 
 def run_background():
+    if vars.running_backtesting:
+        return
+    vars.running_backtesting = True
     back_thread = threading.Thread(target=check)
     back_thread.start()
 

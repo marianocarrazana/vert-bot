@@ -10,3 +10,4 @@ cryptoList = {
     # "BTCDOWNUSDT":{"last_buy":0.0,'overbought':False,'high_risk':False}
     }
 pid = os.getpid()
+running_backtesting = False
