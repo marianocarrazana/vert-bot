@@ -34,7 +34,7 @@ def aroon():
         top = best_aroon['top']
         bottom = best_aroon['bottom']
         if longDB is None:
-            print(row['aroon_osc'],bottom)
+            #print(row['aroon_osc'],bottom)
             if row['aroon_osc'] <= bottom:
                 now = time.time()
                 time_diff = now - vars.cryptoList[pair]['last_buy']
