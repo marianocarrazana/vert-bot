@@ -11,7 +11,7 @@ import ta
 import threading
 
 def test_aroon(pair: str):
-    date_range = "15 day ago UTC"
+    date_range = "12 day ago UTC"
     kline_list = [
         # Client.KLINE_INTERVAL_1MINUTE,
         # Client.KLINE_INTERVAL_3MINUTE,
