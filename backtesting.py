@@ -32,7 +32,7 @@ def test_aroon(pair: str):
         log.debug('Proccesing data...')
         df = pd.DataFrame(bars, columns=utils.CANDLES_NAMES)
         df = utils.candleStringsToNumbers(df)
-        for aroon_period in range(30, 50):
+        for aroon_period in range(20, 50):
             utils.calculate_aroon(df,aroon_period)
             for bottom in range(-80, -59):
                 for top in range(60,81):
