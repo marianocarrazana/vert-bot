@@ -40,11 +40,14 @@ def aroon():
                 time_diff = now - vars.cryptoList[pair]['last_buy']
                 if time_diff < 60*4:
                     continue
+                stop_loss = price - (price * (5/100))
+                take_profit = price + (price * (9/100))
                 vars.cryptoList[pair]['last_buy'] = now
-                long(pair,price)
+                long(pair,price,take_profit,stop_loss)
                 return
         if longDB is not None:
-            if row['aroon_osc'] >= top:
+            stop = price <= longDB['stop_loss'] or price >= longDB['take_profit']
+            if row['aroon_osc'] >= top or stop:
                 orders.sell_long(longDB,price)
                 return
         time.sleep(1)
