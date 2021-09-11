@@ -100,7 +100,7 @@ def sell_long(long,price):
     diff = utils.get_change(price, purchase)
     funds = utils.load('funds')
     if funds is None:
-        funds = 100.0
+        funds = 1000.0
     funds = (funds + (funds*(diff/100)))*0.999
     utils.save('funds',funds)
     utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%\nFunds:${funds:.1f}")

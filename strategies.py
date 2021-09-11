@@ -40,8 +40,8 @@ def aroon():
                 time_diff = now - vars.cryptoList[pair]['last_buy']
                 if time_diff < 60*4:
                     continue
-                stop_loss = price - (price * (5/100))
-                take_profit = price + (price * (7/100))
+                stop_loss = price - (price * (float(os.environ.get('STOP_LOSS') or 5.0)/100))
+                take_profit = price + (price * (float(os.environ.get('TAKE_PROFIT') or 7.0)/100))
                 vars.cryptoList[pair]['last_buy'] = now
                 long(pair,price,take_profit,stop_loss)
                 return
@@ -234,7 +234,7 @@ def long(pair:str, price_f:float,take_profit:float = None, stop_loss:float = Non
     #win_percent = (diff / (row['Close'] / 100))/100
     # if win_percent > 0.005:#0.5%
     if os.environ.get('SIMULATE_ORDERS') == 'True':
-        balance = 100.0
+        balance = 1000.0
     else:
         balance = float(client.get_asset_balance(asset='EUR')['free'])
     max_investment = float(os.environ.get('MAX_INVESTMENT') or 20.0)
