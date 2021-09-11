@@ -41,7 +41,7 @@ def aroon():
                 if time_diff < 60*4:
                     continue
                 stop_loss = price - (price * (5/100))
-                take_profit = price + (price * (9/100))
+                take_profit = price + (price * (7/100))
                 vars.cryptoList[pair]['last_buy'] = now
                 long(pair,price,take_profit,stop_loss)
                 return
