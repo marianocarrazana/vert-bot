@@ -178,3 +178,7 @@ def get_change(current, previous):
         return ((current - previous) / previous) * 100.0
     except ZeroDivisionError:
         return float('inf')
+
+def get_spot_funds():
+    funds = client.get_account()
+    print(f"{funds=}")

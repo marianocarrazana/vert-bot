@@ -98,13 +98,17 @@ def sell_long(long,price):
         stats['losses'] += 1
     utils.save('stats',stats)
     diff = utils.get_change(price, purchase)
-    funds = utils.load('funds')
-    if funds is None:
-        funds = 1000.0
-    funds = (funds + (funds*(diff/100)))*0.999
-    utils.save('funds',funds)
-    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%\nFunds:${funds:.1f}")
     market_sell(long['pair'],long['qty'])
+    time.sleep(1)
+    if simulate:
+        funds = utils.load('funds')
+        if funds is None:
+            funds = 1000.0
+        funds = (funds + (funds*(diff/100)))*0.999
+        utils.save('funds',funds)
+    else:
+        funds = float(client.get_asset_balance(asset='EUR')['free'])
+    utils.telegramMsg(f"<b>{state}</b>\nPurchase price:{purchase}\nSale price:{price}\nDifference:{diff:.2f}%\nFunds:€{funds:.1f}")
 
 def websocket_error(w,e):
     log.error(e)

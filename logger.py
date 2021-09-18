@@ -42,6 +42,7 @@ log.setLevel(debug_level)
 ch = logging.StreamHandler()
 ch.setLevel(debug_level)
 ch.setFormatter(CustomFormatter())
+log.handlers.clear()
 log.addHandler(ch)
 #file
 fh = logging.FileHandler('debug.log')
